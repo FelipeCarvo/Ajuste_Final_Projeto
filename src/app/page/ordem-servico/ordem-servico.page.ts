@@ -114,10 +114,20 @@ export class OrdemServicoPage implements OnInit {
     this.filtro.equipamento = item?.id || '';
   }
 
+  /*
   onEmpreendimentoSelecionado(item: any) {
-    this.filtro.empreendimento = item?.id || '';
+    this.filtro.empreendimento =
+  item?.id ||
+  item?.empreendimentoId ||
+  item?.emprdId ||
+  item?.codigo ||
+  '';
   }
+*/
 
+onEmpreendimentoSelecionado(item: any) {
+  this.filtro.empreendimento = item?.id || '';
+}
   onCausaSelecionada(item: any) {
     this.filtro.causaIntervencao = item?.id || '';
   }
@@ -177,9 +187,20 @@ export class OrdemServicoPage implements OnInit {
   }
 
   // 🔹 PESQUISAR
-  pesquisar() {
-    this.router.navigate(['/tabs/ordem-servico-pesquisa'], {
-      queryParams: { ...this.filtro }
-    });
-  }
+pesquisar() {
+  this.router.navigate(['/tabs/ordem-servico-pesquisa'], {
+    queryParams: {
+      numeroOs: this.filtro.numeroOs,
+      empreendimento: this.filtro.empreendimento, // já é GUID
+      equipamento: this.filtro.equipamento,
+      causaIntervencao: this.filtro.causaIntervencao,
+      manutentor: this.filtro.manutentor,
+      status: this.filtro.status,
+      dataAberturaInicial: this.filtro.dataAberturaInicial,
+      dataAberturaFinal: this.filtro.dataAberturaFinal,
+      dataConclusaoInicial: this.filtro.dataConclusaoInicial,
+      dataConclusaoFinal: this.filtro.dataConclusaoFinal
+    }
+  });
+}
 }

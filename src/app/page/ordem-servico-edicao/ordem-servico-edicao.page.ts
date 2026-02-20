@@ -979,11 +979,17 @@ limparEquipamento() {
   this.equipamentosFiltrados = [];
 }
 
-somenteNumero(event: any) {
-  const valor = event.target.value.replace(/\D/g, '');
-  event.target.value = valor;
-}
+// =============================
+// 🔢 SOMENTE NÚMEROS (CORRIGIDO)
+// =============================
+somenteNumero(event: any, campo: 'hodometro' | 'horimetro') {
+  const valor = (event?.target?.value || '').toString().replace(/\D/g, '');
 
+  event.target.value = valor;
+
+  // 🔥 AQUI ESTAVA O ERRO — agora atualiza a variável correta
+  this[campo] = valor;
+}
   // --------- PAYLOAD PARA A API ---------
 
   /** Monta o payload completo da OS com base nos campos da tela */
@@ -1380,8 +1386,6 @@ onDigitarStatus() {
   );
 }
 
-
-
 private carregarOsCompleta(osId: string) {
   if (!osId || osId.length !== 36) return;
 
@@ -1390,117 +1394,126 @@ private carregarOsCompleta(osId: string) {
       const osApi = Array.isArray(res) ? res[0] : res;
       if (!osApi) return;
 
-        console.log('OS API COMPLETA:', osApi);
+      console.log('OS API COMPLETA:', osApi);
 
       // ===============================
-// 🔎 EQUIPAMENTO
-// ===============================
-const equipamento = this.equipamentosLista.find(
-  (e: any) => String(e.id) === String(osApi.equipId)
-);
-this.equipamento = equipamento?.id || '';
-
       // 🔹 CAMPOS SIMPLES
-      this.descricao = osApi.osDescricao || osApi.Descricao || '';
-      this.defeitosConstatados = osApi.obsDef || osApi.DefeitosConstatados || ''; 
-      this.causasProvaveis = osApi.obsCausas || osApi.CausasProvaveis || ''; 
-      this.observacoes = osApi.observacao || osApi.Observacao || '';
+      // ===============================
+      this.descricao = osApi.osDescricao ?? osApi.Descricao ?? '';
 
-     this.hodometro = osApi.odometro ?? '';
-     this.horimetro = osApi.horimetro ?? '';
+      this.defeitosConstatados =
+        osApi.obsDef ?? osApi.DefeitosConstatados ?? '';
 
-      this.dataAbertura = osApi.osDataAbertura || osApi.DataAbertura || null;
-      this.dataConclusao = osApi.osDataConclusao || osApi.DataFechamento || null;
+      this.causasProvaveis =
+        osApi.obsCausas ?? osApi.CausasProvaveis ?? '';
 
-      //this.statusCodigo = osApi.Status ?? 1;
+      this.observacoes =
+        osApi.observacao ?? osApi.Observacao ?? '';
+
+      this.hodometro =
+        osApi.odometro !== null && osApi.odometro !== undefined
+          ? String(osApi.odometro)
+          : '';
+
+      this.horimetro =
+        osApi.horimetro !== null && osApi.horimetro !== undefined
+          ? String(osApi.horimetro)
+          : '';
+
+      this.dataAbertura =
+        osApi.osDataAbertura ?? osApi.DataAbertura ?? null;
+
+      this.dataConclusao =
+        osApi.osDataConclusao ?? osApi.DataFechamento ?? null;
+
+      // ===============================
+      // 🔎 EQUIPAMENTO
+      // ===============================
+      const equipamento = this.equipamentosLista.find(
+        (e: any) =>
+          String(e.id) === String(osApi.equipId ?? osApi.EquipamentoId)
+      );
+      this.equipamento = equipamento?.id || '';
 
       // ===============================
       // 🔎 STATUS
       // ===============================
       const status = this.statusLista.find(
         (s: any) =>
-          String(s.valor ?? s.codigo ?? s.id) === String(osApi.statusCod ?? osApi.Status)
+          String(s.valor ?? s.codigo ?? s.id) ===
+          String(osApi.statusCod ?? osApi.Status)
       );
       this.statusCodigo = status?.valor ?? 1;
 
-      // 🔥 AQUI ESTÁ A CORREÇÃO VERDADEIRA
+      // ===============================
+      // 🔎 EMPREENDIMENTO
+      // ===============================
+       this.empreendimento = osApi.emprdId ?? osApi.emprdintervencaoId ?? '';
 
-      this.empreendimento = osApi.emprdCod || osApi.EmpreendimentoId || '';
-      this.causaIntervencao = osApi.causasId || osApi.CausasId || '';
-      //this.manutentor = osApi.manutentorId || osApi.ManutentorResponsavelId || '';
+       
+      // ===============================
+      // 🔎 CLASSIFICAÇÃO
+      // ===============================
+      const classificacao = this.classificacoesLista.find(
+        (c: any) =>
+          String(c.codigo ?? c.classifCod ?? c.ClassificacaoId) ===
+          String(osApi.classifCod ?? osApi.ClassificacaoId)
+      );
+      this.classificacao = classificacao?.id || '';
+
+      // ===============================
+      // 🔎 TIPO
+      // ===============================
+      const tipo = this.tiposOsLista.find(
+        (t: any) =>
+          String(t.codigo ?? t.tpServCod ?? t.TipoServicoId) ===
+          String(osApi.tpServCod ?? osApi.TipoServicoId)
+      );
+      this.tipo = tipo?.id || '';
+
+      // ===============================
+      // 🔎 CAUSA INTERVENÇÃO
+      // ===============================
+      const causa = this.causasIntervencaoLista.find(
+        (c: any) =>
+          String(c.id ?? c.codigo ?? c.CausaIntervencao) ===
+          String(osApi.causasId ?? osApi.CausasId)
+      );
+      this.causaIntervencao = causa?.id || '';
+
+      // ===============================
+      // 🔎 OPERADOR
+      // ===============================
+      const operador = this.motoristasLista.find(
+        (m: any) =>
+          String(m.fornCod ?? '').trim() ===
+          String(osApi.colaboradorCod ?? '').trim()
+      );
+
+      this.operadorMotorista = operador ? String(operador.id) : '';
 
       // ===============================
       // 🔎 MANUTENTOR
       // ===============================
-      const manut = this.manutentoresLista.find(
+      const manutentor = this.manutentoresLista.find(
         (m: any) =>
           String(m.id ?? m.manutentorId ?? m.colaboradorCod) ===
-          String(osApi.manutentorId)
+          String(osApi.manutentorId ?? osApi.ManutentorResponsavelId)
       );
-      this.manutentor = manut?.id || '';
+      this.manutentor = manutentor?.id || '';
 
-
-
-
-// EMPREENDIMENTO
-this.empreendimento = osApi.emprdId ?? osApi.emprdintervencaoId ?? '';
-
-
-// CLASSIFICAÇÃO
-const classif = this.classificacoesLista.find(
-  (c: any) =>
-    String(c.codigo ?? c.classifCod ?? c.ClassificacaoId) ===
-    String(osApi.classifCod)
-);
-this.classificacao = classif?.id || '';
-
-// TIPO
-const tipo = this.tiposOsLista.find(
-  (t: any) =>
-    String(t.codigo ?? t.tpServCod ?? t.TipoServicoId) ===
-    String(osApi.tpServCod)
-);
-this.tipo = tipo?.id || '';
-
-// OPERADOR
-const operador = this.motoristasLista.find(
-  (m: any) =>
-    String(m.colaboradorCod).trim() ===
-    String(osApi.colaboradorCod).trim()
-);
-
-this.operadorMotorista = operador?.id ?? '';
-
-// EMPREENDIMENTO INTERVENÇÃO
-const empInterv = this.empreendimentosLista.find(
-  (e: any) =>
-    String(e.codigo ?? e.emprdCod ?? e.EmpreendimentoId) ===
-    String(osApi.emprdintervencaoCod)
-);
-this.empreendimentoIntervencao = empInterv?.id || '';
-
-
-    }
+      // ===============================
+      // 🔎 EMPREENDIMENTO INTERVENÇÃO
+      // ===============================
+      const empInterv = this.empreendimentosLista.find(
+        (e: any) =>
+          String(e.id ?? e.codigo ?? e.EmpreendimentoId) ===
+          String(osApi.emprdintervencaoId ?? osApi.emprdintervencaoCod)
+      );
+      this.empreendimentoIntervencao = empInterv?.id || '';
+    },
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1508,6 +1521,11 @@ this.empreendimentoIntervencao = empInterv?.id || '';
   salvarOS() {
     const oldOsId = this.osId;
     const osCod = this.numeroOS;
+
+      const isNovaOS = !oldOsId;
+
+
+
     // Log do valor atual do campo descricao
     // Monta o objeto principal usando o método centralizador do serviço
     // Só envia IdOs se for um GUID válido (evita duplicidade/criação indevida)
@@ -1528,8 +1546,8 @@ this.empreendimentoIntervencao = empInterv?.id || '';
       DataAbertura: this.dataAbertura,
       DataFechamento: this.dataConclusao,
 
-      Hodometro: this.hodometro,
-      Horimetro: this.horimetro,
+      Odometro: this.hodometro,
+Horimetro: this.horimetro,
 
       // Novos campos:
       DefeitosConstatados: (this.defeitosConstatados || '').toString().trim(),
@@ -1591,6 +1609,9 @@ if (faltando.length > 0) {
         // 🔧 ALTERAÇÃO: exibe popup automático de sucesso
         this.mostrarToastSucesso();
 
+
+         if (!isNovaOS) {
+
         //NOVO: navegar automaticamente para a tela de pesquisa
 this.router.navigate(['/tabs/ordem-servico-pesquisa'], {//DEFINIR PARA QUAL TELA REALMENTE DEVERA VOLTAR 
   replaceUrl: true
@@ -1598,6 +1619,7 @@ this.router.navigate(['/tabs/ordem-servico-pesquisa'], {//DEFINIR PARA QUAL TELA
 
         // 🔧 ALTERAÇÃO: libera botão Anexar Foto
         //this.osConfirmada = true;
+}
       },
       error: async () => {
         // mesmo em erro, mantém o fluxo atual conforme solicitado

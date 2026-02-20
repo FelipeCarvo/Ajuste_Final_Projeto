@@ -7,6 +7,7 @@ export interface OrdemServicoListaItem {
   osDescricao: string;
   equipCod: string;
   equipIndentificador: string;
+    statusCod?: number; // ALTERAÇÃO 1 - adicionar statusCod
   statusDescricao: string;
 }
 
@@ -20,6 +21,14 @@ export interface OrdemServicoListaItem {
 export class OrdemServicoPesquisaPage implements OnInit {
   listaOs: OrdemServicoListaItem[] = [];
   carregando = false;
+
+    // 🔥 ALTERAÇÃO 2 - MAPA OFICIAL DE STATUS (PADRONIZAÇÃO FRONT)
+  private statusMap: Record<number, string> = {
+    1: 'Aberto',
+    2: 'Em andamento',
+    3: 'Concluído',
+    4: 'Cancelado',
+  };
 
   private isGuid(value: string): boolean {
     const v = (value || '').trim();
@@ -39,6 +48,9 @@ export class OrdemServicoPesquisaPage implements OnInit {
   }
 
   private aplicarFiltrosLocal(dados: any[], filtros: {
+
+    
+
     numeroOs?: string;
     empreendimento?: string;
     equipamento?: string;
@@ -52,6 +64,8 @@ export class OrdemServicoPesquisaPage implements OnInit {
   }): any[] {
     let lista = Array.isArray(dados) ? [...dados] : [];
 
+      console.log('Valor filtro empreendimento:', filtros.empreendimento);
+
     const numeroRaw = (filtros.numeroOs || '').trim();
     if (numeroRaw) {
       const digits = (numeroRaw.match(/\d+/g) || []).join('');
@@ -63,6 +77,7 @@ export class OrdemServicoPesquisaPage implements OnInit {
       if (texto) {
         lista = lista.filter(item => String(item?.osDescricao ?? item?.Descricao ?? '').toLowerCase().includes(texto));
       }
+     
     }
 
     const equipamentoTxt = (filtros.equipamento || '').trim().toLowerCase();
@@ -73,7 +88,7 @@ export class OrdemServicoPesquisaPage implements OnInit {
         return cod.includes(equipamentoTxt) || ident.includes(equipamentoTxt);
       });
     }
-
+/*
     const empreendimentoTxt = (filtros.empreendimento || '').trim().toLowerCase();
     if (empreendimentoTxt && !this.isGuid(empreendimentoTxt)) {
       lista = lista.filter(item => {
@@ -89,6 +104,20 @@ export class OrdemServicoPesquisaPage implements OnInit {
         );
       });
     }
+*/
+// ===============================
+// 🔎 FILTRO EMPREENDIMENTO
+// ===============================
+const empreendimentoValor = (filtros.empreendimento || '').trim();
+
+if (empreendimentoValor) {
+  lista = lista.filter(item => {
+    return (
+      String(item?.emprdAberturaId ?? '') === empreendimentoValor ||
+      String(item?.emprdintervencaoId ?? '') === empreendimentoValor
+    );
+  });
+}
 
     const causaTxt = (filtros.causaIntervencao || '').trim().toLowerCase();
     if (causaTxt && !this.isGuid(causaTxt)) {
@@ -151,14 +180,28 @@ export class OrdemServicoPesquisaPage implements OnInit {
     private ordemService: OrdemServicoService
   ) {}
 
-  ngOnInit() {
-    const mapItem = (item: any): OrdemServicoListaItem => ({
-      osCod: String(item?.osCod ?? item?.NumeroOs ?? item?.IdOs ?? ''),
-      osDescricao: item?.osDescricao ?? item?.Descricao ?? '',
-      equipCod: item?.equipCod ?? item?.EquipamentoId ?? '',
-      equipIndentificador: item?.equipIndentificador ?? '',
-      statusDescricao: item?.statusDescricao ?? item?.StatusDescricao ?? '',
-    });
+   ngOnInit() {
+
+    // 🔥 ALTERAÇÃO 3 - mapItem ajustado
+    const mapItem = (item: any): OrdemServicoListaItem => {
+
+      const statusCod = Number(item?.statusCod ?? item?.Status ?? 0);
+
+      return {
+        osCod: String(item?.osCod ?? item?.NumeroOs ?? item?.IdOs ?? ''),
+        osDescricao: item?.osDescricao ?? item?.Descricao ?? '',
+        equipCod: item?.equipCod ?? item?.EquipamentoId ?? '',
+        equipIndentificador: item?.equipIndentificador ?? '',
+        statusCod: statusCod,
+
+        // 🔥 ALTERAÇÃO 4 - força exibir pelo mapa
+        statusDescricao:
+          this.statusMap[statusCod] ??
+          item?.statusDescricao ??
+          item?.StatusDescricao ??
+          '',
+      };
+    };
 
     this.route.queryParamMap.subscribe((params) => {
       const highlightOs = params.get('highlightOs');
@@ -182,14 +225,23 @@ export class OrdemServicoPesquisaPage implements OnInit {
       const empreendimentoTrim = (filtrosTela.empreendimento || '').trim();
       const equipamentoTrim = (filtrosTela.equipamento || '').trim();
 
-      const filtrosApi = {
-        osId: (numeroDigits && this.isGuid(numeroDigits)) ? numeroDigits : null,
-        empreendimentoId: (empreendimentoTrim && this.isGuid(empreendimentoTrim)) ? empreendimentoTrim : null,
-        equipamentoId: (equipamentoTrim && this.isGuid(equipamentoTrim)) ? equipamentoTrim : null,
-        status: (filtrosTela.status || '').trim() || null,
-        dataInicial: filtrosTela.dataAberturaInicial || null,
-        dataFinal: filtrosTela.dataAberturaFinal || null,
-      };
+const filtrosApi = {
+  osId: (numeroDigits && this.isGuid(numeroDigits)) ? numeroDigits : null,
+
+  empreendimentoId:
+    (empreendimentoTrim && this.isGuid(empreendimentoTrim))
+      ? empreendimentoTrim
+      : null,
+
+  equipamentoId:
+    (equipamentoTrim && this.isGuid(equipamentoTrim))
+      ? equipamentoTrim
+      : null,
+
+  status: (filtrosTela.status || '').trim() || null,
+  dataInicial: filtrosTela.dataAberturaInicial || null,
+  dataFinal: filtrosTela.dataAberturaFinal || null,
+};
 
       this.carregando = true;
       this.ordemService.consultarGeral(filtrosApi).subscribe({

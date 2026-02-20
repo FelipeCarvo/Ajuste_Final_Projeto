@@ -245,6 +245,10 @@ export class OrdemServicoService {
       ObsDef: asString(dados['ObsDef'] || dados['DefeitosConstatados']),
       ObsCausas: asString(dados['ObsCausas'] || dados['CausasProvaveis']),
       ManutentorResponsavelId: asString(dados['ManutentorResponsavelId']),
+
+      Odometro: asString(dados['Odometro'] || dados['Hodometro']),
+      Horimetro: asString(dados['Horimetro'] ?? dados['horimetro']),
+
       Origem: 3, // Origem fixo conforme solicitado
       // Adicione outros campos do Swagger conforme necessário
     };

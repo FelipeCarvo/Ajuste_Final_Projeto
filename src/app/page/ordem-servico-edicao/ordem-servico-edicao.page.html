@@ -187,30 +187,24 @@
 
 
 
-      <div class="os-group-inline">
+<div class="os-group-inline">
   <div class="os-group-half">
     <label class="os-label">Hodômetro</label>
-   <input
+    <input
   class="os-input"
-  type="tel"
-  inputmode="numeric"
-  pattern="[0-9]*"
+  type="number"
   [(ngModel)]="hodometro"
   name="hodometro"
-  (input)="somenteNumero($event)"
 />
   </div>
 
   <div class="os-group-half">
     <label class="os-label">Horímetro</label>
-<input
+ <input
   class="os-input"
-  type="tel"
-  inputmode="numeric"
-  pattern="[0-9]*"
+  type="number"
   [(ngModel)]="horimetro"
   name="horimetro"
-  (input)="somenteNumero($event)"
 />
   </div>
 </div>
