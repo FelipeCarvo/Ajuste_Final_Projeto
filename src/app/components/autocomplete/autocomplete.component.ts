@@ -1,4 +1,13 @@
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ElementRef,
+  ViewChild,
+  OnChanges,
+  SimpleChanges
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -10,11 +19,14 @@ import { IonicModule } from '@ionic/angular';
   templateUrl: './autocomplete.component.html',
   styleUrls: ['./autocomplete.component.scss'],
 })
-export class AutocompleteComponent {
+export class AutocompleteComponent implements OnChanges {
 
   @Input() lista: any[] = [];
   @Input() placeholder: string = '';
   @Input() campoDescricao: string = 'descricao';
+
+  /** 🔥 VALOR SELECIONADO (ID) */
+  @Input() valorSelecionado: any;
 
   @Output() selecionado = new EventEmitter<any>();
 
@@ -24,10 +36,34 @@ export class AutocompleteComponent {
   listaFiltrada: any[] = [];
   aberto = false;
 
-  ngOnInit() {
-    this.listaFiltrada = [...this.lista];
+  // =============================
+  // 🔄 ATUALIZA QUANDO RECEBE ID
+  // =============================
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['lista'] || changes['valorSelecionado']) {
+      this.sincronizarValorSelecionado();
+    }
   }
 
+  private sincronizarValorSelecionado() {
+    if (!this.valorSelecionado || !this.lista?.length) {
+      this.textoBusca = '';
+      return;
+    }
+
+    const item = this.lista.find(
+      (i: any) =>
+        String(i.id ?? i.codigo ?? i.valor) === String(this.valorSelecionado)
+    );
+
+    if (item) {
+      this.textoBusca = this.getDescricao(item);
+    }
+  }
+
+  // =============================
+  // 🔎 DESCRIÇÃO DO ITEM
+  // =============================
   getDescricao(item: any): string {
     return (
       item?.[this.campoDescricao] ||
@@ -48,7 +84,6 @@ export class AutocompleteComponent {
 
   filtrar() {
     const termo = (this.textoBusca || '').toLowerCase();
-
     this.aberto = true;
 
     if (!termo) {

@@ -50,10 +50,10 @@
 <!-- EQUIPAMENTO -->
 <div class="os-field">
   <label class="os-label">Equipamento</label>
-
+  
   <app-autocomplete
     [lista]="equipamentosLista"
-    placeholder=""
+    [valorSelecionado]="equipamento"
     campoDescricao="descricao"
     (selecionado)="onEquipamentoSelecionado($event)">
   </app-autocomplete>
@@ -65,7 +65,7 @@
 
   <app-autocomplete
     [lista]="empreendimentosLista"
-    placeholder=""
+    [valorSelecionado]="empreendimento"
     campoDescricao="descricao"
     (selecionado)="onEmpreendimentoSelecionado($event)">
   </app-autocomplete>
@@ -129,7 +129,7 @@
 
   <app-autocomplete
     [lista]="classificacoesLista"
-    placeholder=""
+    [valorSelecionado]="classificacao"
     campoDescricao="descricao"
     (selecionado)="onClassificacaoSelecionada($event)">
   </app-autocomplete>
@@ -141,7 +141,7 @@
 
   <app-autocomplete
     [lista]="tiposOsLista"
-    placeholder=""
+    [valorSelecionado]="tipo"
     campoDescricao="descricao"
     (selecionado)="onTipoSelecionado($event)">
   </app-autocomplete>
@@ -153,7 +153,7 @@
 
   <app-autocomplete
     [lista]="causasIntervencaoLista"
-    placeholder=""
+   [valorSelecionado]="causaIntervencao"
     campoDescricao="descricao"
     (selecionado)="onCausaSelecionada($event)">
   </app-autocomplete>
@@ -166,7 +166,7 @@
 
   <app-autocomplete
     [lista]="motoristasLista"
-    placeholder=""
+    [valorSelecionado]="operadorMotorista"
     campoDescricao="colaboradorNome"
     (selecionado)="onMotoristaSelecionado($event)">
   </app-autocomplete>
@@ -179,7 +179,7 @@
 
   <app-autocomplete
     [lista]="empreendimentosLista"
-    placeholder=""
+    [valorSelecionado]="empreendimentoIntervencao"
     campoDescricao="descricao"
     (selecionado)="onEmpreendimentoIntervSelecionado($event)">
   </app-autocomplete>
@@ -221,7 +221,7 @@
 
   <app-autocomplete
     [lista]="statusLista"
-    placeholder=""
+   [valorSelecionado]="statusCodigo"
     campoDescricao="descricao"
     (selecionado)="onStatusSelecionado($event)">
   </app-autocomplete>
@@ -234,7 +234,7 @@
 
   <app-autocomplete
     [lista]="manutentoresLista"
-    placeholder=""
+    [valorSelecionado]="manutentor"
     campoDescricao="colaboradorNome"
     (selecionado)="onManutentorSelecionado($event)">
   </app-autocomplete>

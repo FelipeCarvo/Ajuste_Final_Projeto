@@ -267,6 +267,7 @@ fecharDropdownAoClicarFora(event: Event) {
     // Então recarregamos as fotos do cache aqui para atualizar a grade imediatamente.
     this.atualizarPreviewFoto();
   }
+  
 
   ngOnInit() {
     // Inicializa campos em branco por padrão
@@ -309,6 +310,7 @@ fecharDropdownAoClicarFora(event: Event) {
         return;
         
       }
+        
 
       // Se houver parâmetro 'os', preenche os campos (edição)
       if (params && params['os']) {
@@ -396,6 +398,18 @@ fecharDropdownAoClicarFora(event: Event) {
             this.numeroOS = incomingOsCod;
           }
           this.atualizarPreviewFoto();
+
+
+
+this.carregarCombosComCallback(() => {
+
+  if (incomingOsId && incomingOsId.length === 36) {
+    this.carregarOsCompleta(incomingOsId);
+  }
+
+});
+
+/*
           this.descricao = String(os.osDescricao ?? os.descricao ?? os.Descricao ?? '');
           // Novos campos: Defeitos Constatados, Causas Prováveis, Observações
           this.defeitosConstatados = String(camposExtras.defeitosConstatados);
@@ -462,6 +476,9 @@ fecharDropdownAoClicarFora(event: Event) {
           // Mapeamento dinâmico para campos extras (garante que qualquer campo novo vindo do backend seja exibido em debug)
           this['__osCompletaDebug'] = os;
         });
+
+        */
+       });
       } else {
         // Nova ordem de serviço: limpa todos os campos
         this.carregarCombosComCallback(() => {
@@ -1362,6 +1379,131 @@ onDigitarStatus() {
     st.descricao.toLowerCase().includes(termo)
   );
 }
+
+
+
+private carregarOsCompleta(osId: string) {
+  if (!osId || osId.length !== 36) return;
+
+  this.ordemService.buscarOSPorId(osId).subscribe({
+    next: (res: any) => {
+      const osApi = Array.isArray(res) ? res[0] : res;
+      if (!osApi) return;
+
+        console.log('OS API COMPLETA:', osApi);
+
+      // ===============================
+// 🔎 EQUIPAMENTO
+// ===============================
+const equipamento = this.equipamentosLista.find(
+  (e: any) => String(e.id) === String(osApi.equipId)
+);
+this.equipamento = equipamento?.id || '';
+
+      // 🔹 CAMPOS SIMPLES
+      this.descricao = osApi.osDescricao || osApi.Descricao || '';
+      this.defeitosConstatados = osApi.obsDef || osApi.DefeitosConstatados || ''; 
+      this.causasProvaveis = osApi.obsCausas || osApi.CausasProvaveis || ''; 
+      this.observacoes = osApi.observacao || osApi.Observacao || '';
+
+     this.hodometro = osApi.odometro ?? '';
+     this.horimetro = osApi.horimetro ?? '';
+
+      this.dataAbertura = osApi.osDataAbertura || osApi.DataAbertura || null;
+      this.dataConclusao = osApi.osDataConclusao || osApi.DataFechamento || null;
+
+      //this.statusCodigo = osApi.Status ?? 1;
+
+      // ===============================
+      // 🔎 STATUS
+      // ===============================
+      const status = this.statusLista.find(
+        (s: any) =>
+          String(s.valor ?? s.codigo ?? s.id) === String(osApi.statusCod ?? osApi.Status)
+      );
+      this.statusCodigo = status?.valor ?? 1;
+
+      // 🔥 AQUI ESTÁ A CORREÇÃO VERDADEIRA
+
+      this.empreendimento = osApi.emprdCod || osApi.EmpreendimentoId || '';
+      this.causaIntervencao = osApi.causasId || osApi.CausasId || '';
+      //this.manutentor = osApi.manutentorId || osApi.ManutentorResponsavelId || '';
+
+      // ===============================
+      // 🔎 MANUTENTOR
+      // ===============================
+      const manut = this.manutentoresLista.find(
+        (m: any) =>
+          String(m.id ?? m.manutentorId ?? m.colaboradorCod) ===
+          String(osApi.manutentorId)
+      );
+      this.manutentor = manut?.id || '';
+
+
+
+
+// EMPREENDIMENTO
+this.empreendimento = osApi.emprdId ?? osApi.emprdintervencaoId ?? '';
+
+
+// CLASSIFICAÇÃO
+const classif = this.classificacoesLista.find(
+  (c: any) =>
+    String(c.codigo ?? c.classifCod ?? c.ClassificacaoId) ===
+    String(osApi.classifCod)
+);
+this.classificacao = classif?.id || '';
+
+// TIPO
+const tipo = this.tiposOsLista.find(
+  (t: any) =>
+    String(t.codigo ?? t.tpServCod ?? t.TipoServicoId) ===
+    String(osApi.tpServCod)
+);
+this.tipo = tipo?.id || '';
+
+// OPERADOR
+const operador = this.motoristasLista.find(
+  (m: any) =>
+    String(m.colaboradorCod).trim() ===
+    String(osApi.colaboradorCod).trim()
+);
+
+this.operadorMotorista = operador?.id ?? '';
+
+// EMPREENDIMENTO INTERVENÇÃO
+const empInterv = this.empreendimentosLista.find(
+  (e: any) =>
+    String(e.codigo ?? e.emprdCod ?? e.EmpreendimentoId) ===
+    String(osApi.emprdintervencaoCod)
+);
+this.empreendimentoIntervencao = empInterv?.id || '';
+
+
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   /** Clicou na setinha – monta o JSON igual ao do sistema antigo e chama a API */
   salvarOS() {
     const oldOsId = this.osId;
