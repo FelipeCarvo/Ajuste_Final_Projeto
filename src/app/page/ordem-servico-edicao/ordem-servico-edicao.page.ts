@@ -74,6 +74,7 @@ export class OrdemServicoEdicaoPage implements OnInit {
   empreendimentoIntervencao: string = '';
   classificacao: string = '';
   tipo: string = '';
+  tipoDescricao: string = '';
   causaIntervencao: string = '';
   operadorMotorista: string = '';
   manutentor: string = '';
@@ -289,6 +290,11 @@ fecharDropdownAoClicarFora(event: Event) {
       this.statusCodigo = null;
       this.dataAbertura = new Date().toISOString(); // ← data atual
       this.dataConclusao = null;
+      this.hodometro = '';
+      this.horimetro = '';
+      this.defeitosConstatados = '';
+      this.causasProvaveis = '';
+      this.observacoes = '';
     };
 
     this.route.queryParams.subscribe((params) => {
@@ -462,10 +468,17 @@ fecharDropdownAoClicarFora(event: Event) {
           this.classificacao = classifFound ? String(classifFound.id) : (this.classificacoesLista[0]?.id || '');
           // Tipo
           const tipoId = os.TipoServico ?? os.tipo ?? os.tpServcod ?? os.tpServDescricao ?? '';
+          // Busca o tipo na lista por qualquer campo possível
           const tipoFound = this.tiposOsLista.find(
-            (item) => item.id == tipoId || item.codigo == tipoId || item.tipoId == tipoId || item.tpServcod == tipoId || item.tpServDescricao == tipoId
+            (item) => String(item.id) === String(tipoId) || String(item.codigo) === String(tipoId) || String(item.tipoId) === String(tipoId) || String(item.tpServcod) === String(tipoId) || String(item.tpServDescricao) === String(tipoId)
           );
-          this.tipo = tipoFound ? String(tipoFound.id) : (this.tiposOsLista[0]?.id || '');
+          if (tipoFound && tipoFound.id) {
+            this.tipo = String(tipoFound.id);
+            console.log('[TIPO] GUID atribuído ao carregar:', this.tipo, tipoFound);
+          } else {
+            this.tipo = '';
+            console.warn('[TIPO] Nenhum GUID encontrado para tipoId:', tipoId, 'Lista:', this.tiposOsLista);
+          }
           // Causa Intervenção
           const causaId = os.CausaIntervencao ?? os.causaIntervencao ?? os.causasId ?? '';
           const causaFound = this.causasIntervencaoLista.find(
@@ -1209,13 +1222,15 @@ onDigitarTipo() {
 }
 
 selecionarTipo(t: any) {
-  this.tipo = String(
-    t.id || t.TipoServico || t.tipoId
-  );
-
-  this.textoBuscaTipo =
-    String(t.descricao || t.nome || '');
-
+  // Sempre armazena o GUID (id) do tipo selecionado
+  if (t && t.id) {
+    this.tipo = String(t.id);
+    console.log('[TIPO] GUID atribuído ao selecionar:', this.tipo, t);
+  } else {
+    this.tipo = '';
+    console.warn('[TIPO] Nenhum GUID ao selecionar tipo:', t);
+  }
+  this.textoBuscaTipo = String(t.descricao || t.nome || '');
   this.modalTipoAberto = false;
 }
 // =============================
@@ -1414,7 +1429,11 @@ private carregarOsCompleta(osId: string) {
       const osApi = Array.isArray(res) ? res[0] : res;
       if (!osApi) return;
 
+      // Log detalhado para debug
       console.log('OS API COMPLETA:', osApi);
+      console.log('DEBUG - classifCod:', osApi.classifCod, 'ClassificacaoId:', osApi.ClassificacaoId);
+      console.log('DEBUG - tpServCod:', osApi.tpServCod, 'TipoServicoId:', osApi.TipoServicoId);
+      console.log('DEBUG - campos brutos:', JSON.stringify(osApi));
 
       // ===============================
       // 🔹 CAMPOS SIMPLES
@@ -1462,12 +1481,12 @@ private carregarOsCompleta(osId: string) {
       let status = null;
       const statusCodRaw = osApi.statusCod ?? osApi.Status;
       const statusCod = Number(statusCodRaw);
-      // Se for null, undefined, vazio ou zero, não exibe nada
-      if (!statusCodRaw || statusCodRaw === '' || statusCod === 0 || statusCodRaw === null || statusCodRaw === undefined) {
+      // Se for null, undefined ou vazio, não exibe nada
+      if (statusCodRaw === null || statusCodRaw === undefined || statusCodRaw === '') {
         this.statusCodigo = null;
       } else {
         status = this.statusLista.find((s: any) => String(s.valor ?? s.codigo ?? s.id) === String(statusCod));
-        this.statusCodigo = status?.valor ?? null;
+        this.statusCodigo = status ? status.valor : null;
       }
 
       // ===============================
@@ -1477,25 +1496,66 @@ private carregarOsCompleta(osId: string) {
       this.empreendimento = (empId && empId !== '00000000-0000-0000-0000-000000000000') ? empId : '';
 
 
+
       // ===============================
       // 🔎 CLASSIFICAÇÃO
       // ===============================
       let classificacao = null;
-      const classifId = String(osApi.classifCod ?? osApi.ClassificacaoId ?? '');
-      if (classifId && classifId !== '00000000-0000-0000-0000-000000000000') {
-        classificacao = this.classificacoesLista.find((c: any) => String(c.codigo ?? c.classifCod ?? c.ClassificacaoId) === classifId);
+      const classifId = String(
+        osApi.classifCod ?? osApi.ClassificacaoId ?? osApi.classifId ?? ''
+      );
+      if (
+        classifId &&
+        classifId !== '00000000-0000-0000-0000-000000000000' &&
+        classifId !== '0' &&
+        classifId !== '' &&
+        classifId !== null
+      ) {
+        classificacao = this.classificacoesLista.find((c: any) =>
+          String(c.codigo ?? c.classifCod ?? c.ClassificacaoId ?? c.classifId) === classifId
+        );
+        this.classificacao = classificacao?.id || classifId;
+      } else {
+        this.classificacao = '';
       }
-      this.classificacao = classificacao?.id || '';
 
       // ===============================
       // 🔎 TIPO
       // ===============================
       let tipo = null;
-      const tipoId = String(osApi.tpServCod ?? osApi.TipoServicoId ?? '');
-      if (tipoId && tipoId !== '00000000-0000-0000-0000-000000000000' && tipoId !== '0') {
-        tipo = this.tiposOsLista.find((t: any) => String(t.codigo ?? t.tpServCod ?? t.TipoServicoId) === tipoId);
+      const tipoId = String(
+        osApi.tpServCod ?? osApi.TipoServicoId ?? osApi.tpServcod ?? ''
+      );
+      const tipoDescricao = osApi.tpServDescricao ?? osApi.tpServdescricao ?? osApi.TipoServicoDescricao ?? '';
+      if (
+        tipoId &&
+        tipoId !== '00000000-0000-0000-0000-000000000000' &&
+        tipoId !== '0' &&
+        tipoId !== '' &&
+        tipoId !== null
+      ) {
+        tipo = this.tiposOsLista.find((t: any) =>
+          String(t.codigo ?? t.tpServCod ?? t.TipoServicoId ?? t.tpServcod) === tipoId
+        );
+        if (tipo) {
+          // O valor salvo deve ser o id real do tipo (ex: GUID ou código), nunca apenas o número
+          this.tipo = tipo.id || tipo.codigo || tipoId;
+          if (tipoDescricao) {
+            tipo.descricao = `${tipoId} - ${tipoDescricao}`;
+          }
+        } else {
+          // Se não encontrar, só adiciona se não existir nenhum item com esse id
+          this.tipo = tipoId;
+          const jaExiste = this.tiposOsLista.some(t => String(t.id) === String(tipoId));
+          if (!jaExiste && tipoDescricao) {
+            this.tiposOsLista.push({ id: tipoId, descricao: `${tipoId} - ${tipoDescricao}` });
+          }
+        }
+        this.tipoDescricao = tipoDescricao || '';
+      } else {
+        this.tipo = '';
+        this.tipoDescricao = '';
       }
-      this.tipo = tipo?.id || '';
 
       // ===============================
       // 🔎 CAUSA INTERVENÇÃO
