@@ -747,22 +747,13 @@ this.abastecimentoService
       return;
     }
 
-    // Formatar data para ISO (ex: 2025-12-15T02:29:00) - mesmo padrão do Abastecimento Próprio
+    // Formatar data para ISO padrão (ex: 2026-01-26T00:00:00.000Z)
     const d = new Date(this.dtRetirada);
     if (Number.isNaN(d.getTime())) {
       alert('⚠️ Data inválida');
       return;
     }
-
-    
-    const pad2 = (n: number) => n.toString().padStart(2, '0');
-    const dataFormatada =
-      `${d.getFullYear()}-` +
-      `${pad2(d.getMonth() + 1)}-` +
-      `${pad2(d.getDate())}T` +
-      `${pad2(d.getHours())}:` +
-      `${pad2(d.getMinutes())}:` +
-      `${pad2(d.getSeconds())}`;
+    const dataFormatada = d.toISOString();
 
     // Validação Quantidade / Total
     const qtdNum = this.parseNumber(this.qtdRetirada);
@@ -803,28 +794,28 @@ this.abastecimentoService
     if (!blocoValido || blocoValido === '00000000-0000-0000-0000-000000000000') {
       blocoValido = null;
     }
-    const payload: Record<string, unknown> = {
-      TpAbastecimento: 1,
-      DataAbastecimento: dataFormatada,
-      IdFornecedor: this.fornecedor,
-      IdEquipamento: this.equipamento,
-      IdEmprd: this.empreendimento,
-      IdEmpresa: this.empresa,
-      IdCentroDespesa: this.centroDespesas,
-      IdEtapa: this.etapa,
-      IdInsumo: this.insumo,
-      IdBloco: blocoValido,
-      QtdInsumo: qtd,
-      TotalAbastecimentoPosto: total,
-      Origem: 3,
-      Observacao: this.observacao,
-      Odometro: this.hodometro,
-      Horimetro: this.horimetro,
-      NumeroControlePosto: this.numeroControlePosto,
-      Retorno: this.retorno ? 1 : 0,
-      Estoque: this.estoque ? 1 : 0,
-      // Adicione outros campos opcionais conforme necessário
-    };
+      const payload: Record<string, unknown> = {
+        TpAbastecimento: 1,
+        DataAbastecimento: dataFormatada, // Corrigido para o nome correto e formato ISO
+        IdFornecedor: this.fornecedor,
+        IdEquipamento: this.equipamento,
+        IdEmprd: this.empreendimento,
+        IdEmpresa: this.empresa,
+        IdCentroDespesa: this.centroDespesas,
+        IdEtapa: this.etapa,
+        IdInsumo: this.insumo,
+        IdBloco: blocoValido,
+        QtdInsumo: qtd,
+        TotalAbastecimentoPosto: total,
+        Origem: 3,
+        Observacao: this.observacao,
+        Odometro: this.hodometro,
+        Horimetro: this.horimetro,
+        NumeroControlePosto: this.numeroControlePosto,
+        Retorno: this.retorno ? 1 : 0,
+        Estoque: this.estoque ? 1 : 0,
+        // Adicione outros campos opcionais conforme necessário
+      };
     // Se estiver editando, incluir o AbastecimentoId no payload
     if (this.ultimoAbastecimentoIdCarregado) {
       payload['IdAbastecimento'] = this.ultimoAbastecimentoIdCarregado;

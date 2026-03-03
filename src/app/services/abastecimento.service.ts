@@ -399,62 +399,20 @@ listarColaboradoresFrentista() {
 
     // Remover duplicidade de AbastecimentoId/abastecimentoId
     if ('abastecimentoId' in payload && 'AbastecimentoId' in payload) {
-      // Se ambos existem, prioriza AbastecimentoId (padrão backend)
       delete payload['abastecimentoId'];
     }
-/*
-    // Garante que só um dos campos será enviado nos params
-    const params: Record<string, unknown> = {};
-    const keys = [
-      // Campos comuns
-      'TpAbastecimento',
-      'DataAbastecimento',
-      'Origem',
-      // Campos de Abastecimento Próprio
-      'TpDestino',
-      'IdTanqueOrigem',
-      'IdBico',
-      'IdTanqueDestino',
-      'IdInsumo',
-      'QtdInsumo',
-      'IdEquipamento',
-      'IdEmprd',
-      'IdEtapa',
-      'IdBloco',
-      'Odometro',
-      'Horimetro',
-      'NumBicoInicial',
-      'NumBicoFinal',
-      'OperadorSolicitanteId',
-      'FrentistaId',
-      'TipoPrevAbast',
-      'AplicacaoPrevId',
-      'Observacao',
-      // Campos de Abastecimento Posto
-      'IdFornecedor',
-      'IdEmpresa',
-      'IdCentroDespesa',
-      'TotalAbastecimentoPosto',
-      'NumeroControlePosto',
-      'Retorno',
-      'Estoque',
-      // Adiciona só um dos campos de ID se existir
-      ('AbastecimentoId' in payload ? 'AbastecimentoId' : ('abastecimentoId' in payload ? 'abastecimentoId' : null)),
-      // Adiciona IdAbastecimento se existir (para garantir compatibilidade com backend)
-      ('IdAbastecimento' in payload ? 'IdAbastecimento' : null),
-    ].filter(Boolean);
 
-    for (const k of keys) {
-      if (!k) continue;
-      const v = payload?.[k];
-      if (v !== null && typeof v !== 'undefined') {
-        params[k] = v;
+    // Monta a query string manualmente
+    const params = new URLSearchParams();
+    Object.keys(payload).forEach(key => {
+      const value = payload[key];
+      if (value !== null && typeof value !== 'undefined') {
+        params.append(key, String(value));
       }
-    }*/
-return this.api.post(
-  '/api/frotas/Abastecimentos/GravaAbastecimento',
-  payload
-);
+    });
+    const url = `/api/frotas/Abastecimentos/GravaAbastecimento?${params.toString()}`;
+    // Envia como POST sem corpo, só com query string
+    return this.api.post(url, null);
   }
 
   // Bicos (referente à bomba)
