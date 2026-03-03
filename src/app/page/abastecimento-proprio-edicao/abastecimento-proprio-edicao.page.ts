@@ -109,6 +109,7 @@ onBombaChange(value: string | null) {
   const bomba = bombas?.[0]; // pega o primeiro item
   const emprdId = bomba?.empreendimentoId;
 
+  this.emprdId = emprdId ? String(emprdId) : null;
 
   if (emprdId) {
     this.carregarEmpreendimentoPorBomba(emprdId);
@@ -818,8 +819,15 @@ private carregarEmpreendimentoPorBomba(emprdId: string) {
 
         console.log("Empreendimentos retorno API:", emps);
 
-        // 🔥 NÃO seleciona automaticamente
-        this.empreendimentoSelecionado = null;
+        const empreendimentoDaBomba = this.empreendimentos.find(
+          e => String(e.id) === String(emprdId)
+        );
+
+        if (empreendimentoDaBomba) {
+          this.onEmpreendimentoChange(String(empreendimentoDaBomba.id));
+        } else {
+          this.empreendimentoSelecionado = null;
+        }
 
       },
       error: () => {
@@ -1230,6 +1238,11 @@ onAplicacaoChange(event: any) {
     return;
   }
 
+  if (this.odometro == null || this.odometro <= 0) {
+    this.toast('Odômetro obrigatório', 'warning');
+    return;
+  }
+
   // ------------------ DATA FORMATADA ------------------
 
  // ------------------ DATA FORMATADA ------------------
@@ -1267,8 +1280,11 @@ const dataFormatada = `${dataBase}T00:00:00`;
 
 // ------------------ EMPREENDIMENTO ------------------
 
+const guidZerado = '00000000-0000-0000-0000-000000000000';
 const idEmprdFinal: string | undefined =
-  this.empreendimentoSelecionado || undefined;
+  (this.empreendimentoSelecionado && this.empreendimentoSelecionado !== guidZerado)
+    ? this.empreendimentoSelecionado
+    : (this.emprdId && this.emprdId !== guidZerado ? this.emprdId : undefined);
 
 // ------------------ BLOCO ------------------
 
@@ -1277,6 +1293,11 @@ const idBlocoFinal: string | undefined =
 
 console.log("SALVANDO IdEmprd:", idEmprdFinal);
 console.log("SALVANDO IdBloco:", idBlocoFinal);
+
+if (!idEmprdFinal) {
+  this.toast('Empreendimento obrigatório', 'warning');
+  return;
+}
 
 /*
 
@@ -1301,22 +1322,17 @@ if (!this.tipoPrevAbast) {
 const params: Record<string, unknown> = {
   TpAbastecimento: 0,
   DataAbastecimento: dataFormatada,
-  TpDestino: destinoObj.destinoTipo,
+  TpDestino: this.destinoSelecionado ?? undefined,
   IdTanqueOrigem: this.bombaSelecionada,
   IdBico: this.bicoSelecionado,
   IdInsumo: this.insumoSelecionado,
   QtdInsumo: Number(this.quantidade),
   Origem: 3,
-
-
-TipoPrevAbast: this.tipoPrevAbast ?? undefined,
+  IdEmprd: idEmprdFinal,
+  Odometro: this.odometro ?? undefined,
+  TipoPrevAbast: this.tipoPrevAbast ?? undefined,
 
 //IdBloco: this.blocoSelecionado,
-
-  ...(destinoObj.destinoTipo === 'M' && {
-    IdEquipamento: this.equipamentoSelecionado
-  }),
-
   AplicacaoPrevId: this.aplicacaoSelecionada
 };
 

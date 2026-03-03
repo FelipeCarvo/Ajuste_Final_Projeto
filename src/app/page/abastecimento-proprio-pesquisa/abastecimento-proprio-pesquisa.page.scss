@@ -54,28 +54,32 @@
 .os-card {
   background: #ffffff;
   border-radius: 14px;
-  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.08);
-  padding: 22px 18px 24px;
+  box-shadow: 0 7px 16px rgba(0,0,0,0.08);
+  padding: 18px 16px 22px;
   margin-bottom: 14px;
+  width: 100%;
   max-width: 420px;
   margin-left: auto;
   margin-right: auto;
   font-size: 14px;
+  color: #444;
 }
 
 /* ================= LINHAS ================= */
 
 .os-line {
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   line-height: 1.5;
 }
 
 .os-label {
   font-weight: 700;
+  color: #333;
 }
 
 .os-value {
   margin-left: 4px;
+  color: #444;
 }
 
 .os-date {
