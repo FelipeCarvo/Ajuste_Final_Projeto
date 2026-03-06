@@ -358,7 +358,6 @@ ngOnInit() {
 
       // Validação básica
       if (!this.osId || this.osId.length !== 36) {
-        console.warn('GUID inválido recebido na edição:', this.osId);
         return;
       }
 
@@ -575,8 +574,6 @@ ngOnInit() {
     this.ordemService.listarTiposOs().subscribe({
       next: (lista) => { this.tiposOsLista = lista || []; checkDone(); },
     });
-
-    console.log('TIPOS LOOKUP REAL:', JSON.stringify(this.tiposOsLista, null, 2));
 
     this.ordemService.listarCausasIntervencao().subscribe({
       next: (lista) => { this.causasIntervencaoLista = lista || []; checkDone(); },
@@ -1058,10 +1055,8 @@ onDigitarTipo() {
   // Sempre armazena o GUID (id) do tipo selecionado
   if (t && t.id) {
     this.tipo = String(t.id);
-    console.log('[TIPO] GUID atribuído ao selecionar:', this.tipo, t);
   } else {
     this.tipo = '';
-    console.warn('[TIPO] Nenhum GUID ao selecionar tipo:', t);
   }
   this.textoBuscaTipo = String(t.descricao || t.nome || '');
   this.modalTipoAberto = false;
@@ -1263,32 +1258,16 @@ private carregarOsCompleta(osId: string) {
   this.ordemService.buscarOSPorId(osId).subscribe({
   next: (res: ItemComId | ItemComId[] | null) => {
 
-  console.log('RESPOSTA BRUTA DA API >>>', res);
-
   const osApi = Array.isArray(res) ? res[0] : res;
 
-  console.log('OBJETO FINAL OS API >>>', osApi);
-
   if (!osApi) {
-    console.error('API NÃO RETORNOU DADOS');
     return;
   }
 
-console.log('OS API COMPLETA >>>', osApi);
-
-       // 👇 COLOQUE AQUI
-    console.log('TIPOS LISTA:', this.tiposOsLista);
-    console.log('OS API TIPO CAMPOS:', {
-      TipoServicoId: osApi.TipoServicoId,
-      tpServCod: osApi.tpServCod,
-      tpServDescricao: osApi.tpServDescricao
-    });
-
-      // Log detalhado para debug
-      console.log('OS API COMPLETA:', osApi);
-      console.log('DEBUG - classifCod:', osApi.classifCod, 'ClassificacaoId:', osApi.ClassificacaoId);
-      console.log('DEBUG - tpServCod:', osApi.tpServCod, 'TipoServicoId:', osApi.TipoServicoId);
-      console.log('DEBUG - campos brutos:', JSON.stringify(osApi));
+  // ===============================
+  // 🔹 NÚMERO OS (do osCod da API)
+  // ===============================
+  this.numeroOS = String(osApi.numeroOs ?? osApi.NumeroOs ?? osApi.osCod ?? '');
 
       // ===============================
       // 🔹 CAMPOS SIMPLES
@@ -1494,8 +1473,6 @@ private setarTipoPorCodigo(codigo: number) {
   });
 
   this.tipo = tipoEncontrado ? String(tipoEncontrado.id) : '';
-
-  console.log('TIPO FINAL SETADO:', this.tipo);
 }
 
 
@@ -1574,14 +1551,6 @@ if (faltando.length > 0) {
   alert(msg);
   return;
 }
-
-console.log("STATUS ENVIADO PARA API:", params.Status);
-   // Log detalhado dos parâmetros
-
-
-   console.log("TIPO NA TELA:", this.tipo);
-console.log("CLASSIFICACAO NA TELA:", this.classificacao);
-console.log("CAUSA NA TELA:", this.causaIntervencao);
 
     this.ordemService.gravarOrdem(params).subscribe({
       next: (res: ItemComId | string) => {

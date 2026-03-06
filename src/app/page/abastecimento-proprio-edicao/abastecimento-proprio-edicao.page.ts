@@ -99,11 +99,9 @@ export class AbastecimentoProprioEdicaoPage implements OnInit {
 // =======================
 
 onBombaChange(value: string | null) {
-  console.log('🔵 [SELECT] Bomba MUDOU:', value);
   const bombaId = value ? String(value) : null;
 
   this.bombaSelecionada = bombaId;
-  console.log('🔵 [SELECT] bombaSelecionada DEFINIDA:', this.bombaSelecionada);
 
   // Limpa dependentes
   this.bicoSelecionado = null;
@@ -154,9 +152,7 @@ selecionarBomba(item: any) {
 // =======================
 
 onBicoChange(value: string | null) {
-  console.log('🔵 [SELECT] Bico MUDOU:', value);
   this.bicoSelecionado = value ? String(value) : null;
-  console.log('🔵 [SELECT] bicoSelecionado DEFINIDO:', this.bicoSelecionado);
 
   this.carregarUltimoNumeroBico(); // chama automaticamente
 }
@@ -165,7 +161,6 @@ onBicoChange(value: string | null) {
 selecionarBico(item: any) {
   this.onBicoChange(item?.id ?? null);
 }
-/* 🔥 ADAPTADOR AUTOCOMPLETE EQUIPAMENTO */
 selecionarEquipamento(item: any) {
   const equipamentoId = item?.id ?? null;
   this.onEquipamentoChange(equipamentoId);
@@ -174,10 +169,7 @@ selecionarEquipamento(item: any) {
 // DESTINO
 // =======================
 onDestinoChange(value: string | null) {
-
-  console.log('🔵 [SELECT] Destino MUDOU:', value);
   this.destinoSelecionado = value ? String(value) : null;
-  console.log('🔵 [SELECT] destinoSelecionado DEFINIDO:', this.destinoSelecionado);
   this.destinoTravado = false;
 
   if (!this.destinoSelecionado) return;
@@ -188,7 +180,6 @@ onDestinoChange(value: string | null) {
 
   if (!destinoObj) return;
 
-  // 🔥 Se NÃO for destino tipo Equipamento
   if (destinoObj.destinoTipo !== 'M') {
     this.equipamentoSelecionado = null;
   }
@@ -204,14 +195,11 @@ selecionarDestino(item: any) {
 // =======================
 
 onEtapaChange(value: string | null) {
-  console.log('🔵 [SELECT] Etapa MUDOU:', value);
   this.etapaSelecionada = value ? String(value) : null;
-  console.log('🔵 [SELECT] etapaSelecionada DEFINIDA:', this.etapaSelecionada);
 }
 
 /* ADAPTADOR AUTOCOMPLETE ETAPA */
 selecionarEtapa(item: any) {
-  console.log('🔵 [SELECT] Etapa SELECIONADA (autocomplete):', item);
   this.onEtapaChange(item?.id ?? null);
 }
 
@@ -220,9 +208,7 @@ selecionarEtapa(item: any) {
 // =======================
 
 onInsumoChange(value: string | null) {
-  console.log('🔵 [SELECT] Insumo MUDOU:', value);
   this.insumoSelecionado = value ? String(value) : null;
-  console.log('🔵 [SELECT] insumoSelecionado DEFINIDO:', this.insumoSelecionado);
   this.etapaSelecionada = null;
   this.etapas = [];
   this.aplicacaoSelecionada = null;
@@ -245,38 +231,28 @@ selecionarInsumo(item: any) {
 }
 /*  ADAPTADOR AUTOCOMPLETE TROCA/REPOSIÇÃO */
 selecionarTipoPrevAbast(item: any) {
-  console.log('🔵 [SELECT] Troca/Reposição SELECIONADO:', item);
   const valor = Number(item?.id);
   this.tipoPrevAbast = (valor === 1 || valor === 2)
     ? (valor as TipoPrevAbastValor)
     : null;
-  console.log('🔵 [SELECT] tipoPrevAbast DEFINIDO:', this.tipoPrevAbast);
 }
 /* ADAPTADOR AUTOCOMPLETE APLICAÇÃO */
 aplicacaoSelecionada: any = null;
 
 selecionarAplicacao(item: any) {
-  console.log('🔵 [SELECT] Aplicação SELECIONADA:', item);
    this.aplicacaoSelecionada = item?.id ?? null;
-  console.log('🔵 [SELECT] aplicacaoSelecionada DEFINIDA:', this.aplicacaoSelecionada);
 }
 /* ADAPTADOR AUTOCOMPLETE MOTORISTA */
 selecionarMotoristaOperador(item: any) {
-  console.log('🔵 [SELECT] Motorista/Operador SELECIONADO:', item);
   this.motoristaOperadorSelecionado = item?.id ?? item?.fornId ?? null;
-  console.log('🔵 [SELECT] motoristaOperadorSelecionado DEFINIDO:', this.motoristaOperadorSelecionado);
 }
 /* ADAPTADOR AUTOCOMPLETE FRENTISTA */
 selecionarColaboradorFrentista(item: any) {
-  console.log('🔵 [SELECT] Colaborador/Frentista SELECIONADO:', item);
   this.colaboradorFrentistaSelecionado = item?.id ?? null;
-  console.log('🔵 [SELECT] colaboradorFrentistaSelecionado DEFINIDO:', this.colaboradorFrentistaSelecionado);
 }
 /* ADAPTADOR AUTOCOMPLETE BLOCO */
 selecionarBloco(item: any) {
-  console.log('🔵 [SELECT] Bloco SELECIONADO:', item);
   this.blocoSelecionado = item?.id ?? item?.blocoId ?? item?.BlocoId ?? item?.unidadeId ?? null;
-  console.log('🔵 [SELECT] blocoSelecionado DEFINIDO:', this.blocoSelecionado);
 }
     onMotoristaOperadorChange(event: Event) {
       const value = (event as CustomEvent).detail?.value;
@@ -633,8 +609,6 @@ ngOnInit() {
     const cache = this.obterCacheCampos();
     cache[String(abastecimentoId)] = registro;
     localStorage.setItem(this.cacheCamposKey, JSON.stringify(cache));
-
-    console.log('[DEBUG] cache local salvo para abastecimento:', abastecimentoId, registro);
   }
 
   private aplicarCacheCampos(abastecimentoId: string): void {
@@ -691,20 +665,14 @@ ngOnInit() {
     // Restaurar horimetroAtual e odometroAtual se não vieram do backend
     if (this.horimetroAtual == null && registro.horimetroAtual != null) {
       this.horimetroAtual = registro.horimetroAtual;
-      console.log('[DEBUG] ✅ HorimetroAtual restaurado do cache:', this.horimetroAtual);
     }
 
     if (this.odometroAtual == null && registro.odometroAtual != null) {
       this.odometroAtual = registro.odometroAtual;
-      console.log('[DEBUG] ✅ OdometroAtual restaurado do cache:', this.odometroAtual);
     }
-
-    console.log('[DEBUG] cache local aplicado para abastecimento:', abastecimentoId, registro);
   }
 
   private preencherFormularioComDados(dados: any) {
-    console.log('[DEBUG] preencherFormularioComDados RAW:', dados);
-    console.log('[DEBUG] OBJETO COMPLETO stringificado:', JSON.stringify(dados, null, 2));
     this.abastecimentoId = this.getItemValue(dados, ['abastecimentoId', 'IdAbastecimento', 'idAbastecimento']);
     const guidZerado = '00000000-0000-0000-0000-000000000000';
 
@@ -894,28 +862,10 @@ ngOnInit() {
 
     this.quantidade = this.getItemValue(dados, ['quantidade', 'qtdInsumo', 'QtdInsumo']);
 
-    console.log('[DEBUG] Valores no RAW dados:', {
-      horimetro: dados['horimetro'] || dados['Horimetro'] || dados['horiMetro'],
-      odometro: dados['odometro'] || dados['Odometro'],
-      horimetroAtual: dados['horimetroAtual'] || dados['HorimetroAtual'] || dados['horiMetroAtual'],
-      odometroAtual: dados['odometroAtual'] || dados['OdometroAtual'] || dados['hodometroAtual']
-    });
-
-    // Buscar TODOS os campos que contenham "horimetro" ou "odometro"
-    console.log('[DEBUG] BUSCA por campos com "horimetro":', Object.keys(dados).filter(k => k.toLowerCase().includes('horim')));
-    console.log('[DEBUG] BUSCA por campos com "odometro":', Object.keys(dados).filter(k => k.toLowerCase().includes('odomet') || k.toLowerCase().includes('hodomet')));
-
     this.horimetro = this.getItemValue(dados, ['horimetro', 'Horimetro', 'horiMetro']);
     this.odometro = this.getItemValue(dados, ['odometro', 'Odometro']);
     this.horimetroAtual = this.getItemValue(dados, ['horimetroAtual', 'HorimetroAtual', 'horiMetroAtual']);
     this.odometroAtual = this.getItemValue(dados, ['odometroAtual', 'OdometroAtual', 'hodometroAtual']);
-
-    console.log('[DEBUG] Valores APÓS getItemValue:', {
-      horimetro: this.horimetro,
-      odometro: this.odometro,
-      horimetroAtual: this.horimetroAtual,
-      odometroAtual: this.odometroAtual
-    });
 
     this.numBombaInicial = this.getItemValue(dados, ['numBombaInicial', 'bombaInicial', 'numBicoInicial']);
     this.numBombaFinal = this.getItemValue(dados, ['numBombaFinal', 'bombaFinal', 'numBicoFinal']);
@@ -1054,8 +1004,6 @@ private carregarBlocosPorEmpreendimento(empreendimentoId: string) {
 }
 private testarEmpreendimentosComBlocos(): void {
 
-  console.log("🔎 TESTANDO EMPREENDIMENTOS...");
-
   this.empreendimentos.forEach(emp => {
 
     this.abastecimentoService
@@ -1063,12 +1011,6 @@ private testarEmpreendimentosComBlocos(): void {
       .subscribe((res: any) => {
 
         const lista = Array.isArray(res) ? res : [];
-
-        if (lista.length > 0) {
-          console.log("✅ TEM BLOCOS:", emp.descricao, emp.id, lista);
-        } else {
-          console.log("❌ SEM BLOCOS:", emp.descricao);
-        }
 
       });
 
@@ -1119,8 +1061,6 @@ private carregarEmpreendimentoPorBomba(emprdId: string) {
           emprdCod: Number(e.codigo)
         }));
 
-        console.log("Empreendimentos retorno API:", emps);
-
         const empreendimentoDaBomba = this.empreendimentos.find(
           e => String(e.id) === String(emprdId)
         );
@@ -1154,7 +1094,6 @@ private carregarDestinos(bombaId: string) {
     },
     error: () => {
       this.destinos = [];
-      console.log("DESTINOS CARREGADOS:", this.destinos);
     },
   });
 }
@@ -1174,11 +1113,8 @@ private aplicarRegraEquipamentoDestino() {
   });
 
   if (!destinoEquip) {
-    console.log("⚠ Não encontrou destino tipo M");
     return;
   }
-
-  console.log("✅ Destino encontrado:", destinoEquip);
 
   this.destinoSelecionado = destinoEquip.id;
 }
@@ -1211,10 +1147,6 @@ private carregarInsumos(bombaId: string) {
 
 private carregarUltimoNumeroBico() {
 
-  console.log("Chamando ultimo numero bico");
-  console.log("Bomba:", this.bombaSelecionada);
-  console.log("Bico:", this.bicoSelecionado);
-
   if (!this.bombaSelecionada || !this.bicoSelecionado) {
     return;
   }
@@ -1226,30 +1158,20 @@ private carregarUltimoNumeroBico() {
     )
 .subscribe({
   next: (retorno: any) => {
-    console.log("RETORNO API:", retorno);
-
     this.numBombaInicial = retorno?.[0]?.numeracao ?? 0;
   },
-  error: () => {
-    console.error('Erro ao consultar último número do bico');
-  }
+  error: () => {}
 });
 }
 
 onEmpreendimentoChange(value: string | null, resetDependentes: boolean = true) {
-
-  console.log('🔵 [SELECT] Empreendimento MUDOU:', value);
   this.empreendimentoSelecionado = value ? String(value) : null;
 
-  // 🔥 NOVO: capturar o emprdCod do empreendimento selecionado
   const encontrado = this.empreendimentos.find(
     e => String(e.id) === String(this.empreendimentoSelecionado)
   );
 
  this.emprdCod = encontrado?.emprdCod ?? null;
-
-  console.log('🔵 [SELECT] empreendimentoSelecionado DEFINIDO:', this.empreendimentoSelecionado);
-  console.log('🔵 [SELECT] emprdCod CAPTURADO:', this.emprdCod);
 
   if (resetDependentes) {
     this.etapaSelecionada = null;
@@ -1267,17 +1189,13 @@ onEmpreendimentoChange(value: string | null, resetDependentes: boolean = true) {
   // Carrega Etapas
   this.carregarEtapas();
 
-  // 🔥 Agora vai enviar o emprdCod correto
 if (this.empreendimentoSelecionado) {
   this.carregarBlocosPorEmpreendimento(this.empreendimentoSelecionado);
 }
 }
 
 onEquipamentoChange(value: string | null) {
-
-  console.log('🔵 [SELECT] Equipamento MUDOU:', value);
   this.equipamentoSelecionado = value ? String(value) : null;
-  console.log('🔵 [SELECT] equipamentoSelecionado DEFINIDO:', this.equipamentoSelecionado);
 
   this.carregarAplicacoes();
 
@@ -1285,7 +1203,6 @@ onEquipamentoChange(value: string | null) {
     return;
   }
 
-  // 🔥 Se destinos já estiverem carregados, aplica agora
   if (this.destinos && this.destinos.length > 0) {
     this.aplicarRegraEquipamentoDestino();
   }
@@ -1317,9 +1234,6 @@ private carregarEtapas() {
       })
       .filter(e => !!e.id && e.id !== '' && !!String(e.descricao ?? '').trim());
 
-    console.log('[DEBUG] carregarEtapas retorno bruto:', response);
-    console.log('[DEBUG] carregarEtapas mapeado:', this.etapas);
-
     if (
       etapaSelecionadaAtual &&
       !this.etapas.some(e => String(e.id) === String(etapaSelecionadaAtual))
@@ -1342,12 +1256,6 @@ private carregarEtapas() {
     tentativa: string,
     onDone: (ok: boolean) => void
   ) => {
-    console.log(`[DEBUG] carregarEtapas TENTATIVA ${tentativa}:`, {
-      empreendimentoId,
-      insumoId,
-      emprdCod
-    });
-
     this.abastecimentoService
       .listarEtapas({
         empreendimentoId,
@@ -1358,14 +1266,10 @@ private carregarEtapas() {
       })
       .subscribe({
         next: (response: any) => {
-          console.log(`[DEBUG] carregarEtapas TENTATIVA ${tentativa} RESPONSE:`, response);
           const ok = aplicarListaEtapas(response);
-          console.log(`[DEBUG] carregarEtapas TENTATIVA ${tentativa} SUCESSO:`, ok);
           onDone(ok);
         },
-        error: (err) => {
-          console.error(`[DEBUG] carregarEtapas TENTATIVA ${tentativa} ERRO:`, err);
-          console.error('[DEBUG] Status:', err.status, 'Message:', err.message);
+        error: () => {
           onDone(false);
         }
       });
@@ -1377,28 +1281,15 @@ private carregarEtapas() {
     ? this.emprdCod
     : null;
 
-  console.log('[DEBUG] carregarEtapas INICIANDO com:', {
-    empreendimentoId,
-    insumoId,
-    empreendimentoCod
-  });
-
   // Tentativa 1: Apenas GUID do empreendimento
   consultarEtapas(empreendimentoId, null, null, '1 (só GUID)', (okBase) => {
-    if (okBase) {
-      console.log('[DEBUG] carregarEtapas SUCESSO na tentativa 1');
-      return;
-    }
+    if (okBase) return;
 
     // Tentativa 2: GUID + insumoId
     consultarEtapas(empreendimentoId, insumoId, null, '2 (GUID + insumo)', (okComInsumo) => {
-      if (okComInsumo) {
-        console.log('[DEBUG] carregarEtapas SUCESSO na tentativa 2');
-        return;
-      }
+      if (okComInsumo) return;
 
       if (empreendimentoCod === null) {
-        console.warn('[DEBUG] carregarEtapas SEM emprdCod, desistindo');
         if (this.etapaSelecionada && !this.etapas.some(e => String(e.id) === String(this.etapaSelecionada))) {
           this.etapas = [
             ...this.etapas,
@@ -1410,10 +1301,7 @@ private carregarEtapas() {
 
       // Tentativa 3: GUID + insumoId + código numérico (fallback para APIs legadas)
       consultarEtapas(empreendimentoId, insumoId, empreendimentoCod, '3 (GUID + insumo + COD)', (okComCod) => {
-        if (okComCod) {
-          console.log('[DEBUG] carregarEtapas SUCESSO na tentativa 3');
-        } else {
-          console.warn('[DEBUG] carregarEtapas FALHOU em todas as tentativas');
+        if (!okComCod) {
           if (this.etapaSelecionada && !this.etapas.some(e => String(e.id) === String(this.etapaSelecionada))) {
             this.etapas = [
               ...this.etapas,
@@ -1458,8 +1346,6 @@ private carregarAplicacoes() {
 
         const lista = this.extrairLista<any>(res);
 
-        console.log('[DEBUG] carregarAplicacoes retorno bruto:', res);
-
         this.aplicacoes = lista
           .map((a: any) => {
             const idRaw = a.aplicacaoId ?? a.AplicacaoId ?? a.aplicacaoID ?? a.idAplicacao ?? a.aplicacaoCdg ?? a.codigo ?? a.cod ?? a.id ?? a.value ?? a.valor;
@@ -1484,7 +1370,6 @@ private carregarAplicacoes() {
         }
 
         this.aplicacaoHabilitada = this.aplicacoes.length > 0 || !!this.aplicacaoSelecionada;
-        console.log('[DEBUG] carregarAplicacoes mapeado:', this.aplicacoes);
 
         if (this.aplicacaoSelecionada && !this.aplicacoes.some(a => String(a.id) === String(this.aplicacaoSelecionada))) {
           this.aplicacoes = [
@@ -1504,8 +1389,7 @@ private carregarAplicacoes() {
           }
         }
       },
-      error: (err) => {
-        console.log('[DEBUG] carregarAplicacoes erro:', err);
+      error: () => {
         this.aplicacoes = [];
         this.aplicacaoHabilitada = false;
         if (this.aplicacaoSelecionada) {
@@ -1550,7 +1434,7 @@ private carregarAplicacoes() {
       hoje.setHours(23, 59, 59, 999);
 
       if (dataSelecionada > hoje) {
-        this.toast('⚠️ Data não pode ser futura!', 'warning');
+        this.toast('Data não pode ser futura.', 'warning');
   }
 
       this.data = data.date;
@@ -1770,9 +1654,6 @@ const idEmprdFinal: string | undefined =
 const idBlocoFinal: string | undefined =
   this.blocoSelecionado || undefined;
 
-console.log("SALVANDO IdEmprd:", idEmprdFinal);
-console.log("SALVANDO IdBloco:", idBlocoFinal);
-
 if (!idEmprdFinal) {
   this.toast('Empreendimento obrigatório', 'warning');
   return;
@@ -1826,13 +1707,6 @@ const params: Record<string, unknown> = {
   ...(this.abastecimentoId ? { IdAbastecimento: this.abastecimentoId } : {})
 };
 
-console.log('[DEBUG] Medições sendo SALVAS:', {
-  odometro: this.odometro,
-  odometroAtual: this.odometroAtual,
-  horimetro: this.horimetro,
-  horimetroAtual: this.horimetroAtual
-});
-
 
   // ------------------ REGRA DESTINO ------------------
 
@@ -1852,10 +1726,6 @@ console.log('[DEBUG] Medições sendo SALVAS:', {
   // ------------------ ENVIO ------------------
 
   this.carregando = true;
-
-  console.log("AplicacaoSelecionada:", this.aplicacaoSelecionada);
-
-console.log("PAYLOAD FINAL:", params);
 
   this.abastecimentoService.gravarAbastecimento(params)
   .subscribe({
