@@ -25,7 +25,7 @@ export class AutocompleteComponent implements OnChanges {
   @Input() placeholder: string = '';
   @Input() campoDescricao: string = 'descricao';
    @Input() disabled: boolean = false;
-   
+
 
   /** 🔥 VALOR SELECIONADO (ID) */
   @Input() valorSelecionado: any;
