@@ -117,6 +117,15 @@ export class AbastecimentoPostosPage implements OnInit {
 
     const { data } = await popover.onDidDismiss();
 
+    if (data?.cleared) {
+      if (fieldName === 'dataInicial') {
+        this.dataInicial = null;
+      } else {
+        this.dataFinal = null;
+      }
+      return;
+    }
+
     if (data?.date) {
       if (fieldName === 'dataInicial') {
         this.dataInicial = data.date;
@@ -124,11 +133,6 @@ export class AbastecimentoPostosPage implements OnInit {
         this.dataFinal = data.date;
       }
     }
-  }
-
-  limparData(campo: 'dataInicial' | 'dataFinal', event: Event) {
-    event.stopPropagation();
-    this[campo] = null;
   }
 
   formatDate(isoString: string | null): string {

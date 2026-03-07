@@ -60,7 +60,10 @@ export class AutocompleteComponent implements OnChanges {
 
     if (item) {
       this.textoBusca = this.getDescricao(item);
+      return;
     }
+
+    this.textoBusca = '';
   }
 
   // =============================

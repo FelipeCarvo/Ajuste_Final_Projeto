@@ -743,6 +743,11 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     await popover.present();
 
     const { data } = await popover.onDidDismiss();
+    if (data?.cleared) {
+      this[fieldName] = null;
+      return;
+    }
+
     if (data?.date) {
       this[fieldName] = data.date;
     }
@@ -756,13 +761,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       return '';
     }
   }
-  limparData(
-  campo: 'dtRetirada' | 'hodometroData' | 'nCtlPostoData',
-  event: Event
-) {
-  event.stopPropagation();
-  this[campo] = null;
-}
 
   confirmar() {
     if (!this.dtRetirada) {

@@ -31,8 +31,8 @@ export class AbastecimentoProprioPesquisaPage implements OnInit {
     // pega os filtros enviados pela tela anterior
     this.route.queryParams.subscribe((params) => {
       this.filtrosAtuais = {
-        origemTanque: params['origemTanque'] || undefined,
-        equipamento: params['equipamento'] || undefined,
+        origemTanque: params['origemTanqueId'] || params['origemTanque'] || undefined,
+        equipamento: params['equipamentoId'] || params['equipamento'] || undefined,
         dataInicial: params['dataInicial'] || undefined,
         dataFinal: params['dataFinal'] || undefined,
       };
@@ -87,6 +87,22 @@ export class AbastecimentoProprioPesquisaPage implements OnInit {
               return ok;
             });
           }
+
+          if (lista.length === 0) {
+            this.carregando = false;
+            this.router.navigate(['/tabs/abastecimento-proprio'], {
+              queryParams: {
+                origemTanqueId: filtros.origemTanque || '',
+                equipamentoId: filtros.equipamento || '',
+                dataInicial: filtros.dataInicial || '',
+                dataFinal: filtros.dataFinal || '',
+                semResultado: '1',
+              },
+              replaceUrl: true,
+            });
+            return;
+          }
+
           this.lista = lista;
           this.carregando = false;
         },

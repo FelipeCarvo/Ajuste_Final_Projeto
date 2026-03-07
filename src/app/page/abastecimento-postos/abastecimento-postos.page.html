@@ -58,15 +58,6 @@
       (click)="openCalendar($event, 'dataInicial')">
     </ion-input>
 
-    <!-- 🔥 BOTÃO LIMPAR -->
-    <button
-      *ngIf="dataInicial"
-      type="button"
-      class="os-date-clear"
-      (click)="limparData('dataInicial', $event)">
-      <ion-icon name="close-outline"></ion-icon>
-    </button>
-
     <!-- BOTÃO CALENDÁRIO -->
     <button
       type="button"
@@ -91,15 +82,6 @@
       [value]="formatDate(dataFinal)"
       (click)="openCalendar($event, 'dataFinal')">
     </ion-input>
-
-    <!-- 🔥 BOTÃO LIMPAR -->
-    <button
-      *ngIf="dataFinal"
-      type="button"
-      class="os-date-clear"
-      (click)="limparData('dataFinal', $event)">
-      ✕
-    </button>
 
     <!-- BOTÃO CALENDÁRIO -->
     <button

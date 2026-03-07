@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Router } from '@angular/router';
-import { PopoverController } from '@ionic/angular';
+import { AlertController, PopoverController } from '@ionic/angular';
 import { format, parseISO } from 'date-fns';
 import { CalendarPopoverComponent } from '../../components/calendar-popover/calendar-popover.component';
 import { AbastecimentoService } from '../../services/abastecimento.service';
@@ -27,12 +28,46 @@ export class AbastecimentoProprioPage implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private popoverCtrl: PopoverController,
+    private alertCtrl: AlertController,
     private abastecimentoService: AbastecimentoService
   ) {}
 
   ngOnInit() {
     this.carregarListas();
+    this.restaurarFiltrosDaPesquisa();
+  }
+
+  private restaurarFiltrosDaPesquisa() {
+    this.route.queryParamMap.subscribe((params) => {
+      this.origemTanqueId = params.get('origemTanqueId') ?? '';
+      this.equipamentoId = params.get('equipamentoId') ?? '';
+      this.dataInicial = params.get('dataInicial');
+      this.dataFinal = params.get('dataFinal');
+
+      if (params.get('semResultado') === '1') {
+        void this.exibirAlertaSemResultado();
+
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { semResultado: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      }
+    });
+  }
+
+  private async exibirAlertaSemResultado() {
+    const alert = await this.alertCtrl.create({
+      header: 'Atenção!',
+      message: 'A pesquisa não retornou resultados. Ajuste os filtros e tente novamente.',
+      buttons: ['OK'],
+      backdropDismiss: true,
+    });
+
+    await alert.present();
   }
 
 carregarListas() {
@@ -63,13 +98,6 @@ carregarListas() {
   onEquipamentoSelecionado(item: any) {
     this.equipamentoId = item?.id ?? null;
   }
-
-  // LIMPAR DATA
-  limparData(campo: 'dataInicial' | 'dataFinal', event: Event) {
-    event.stopPropagation();
-    this[campo] = null;
-  }
-
   // CALENDÁRIO
   async openCalendar(event: any, campo: 'dataInicial' | 'dataFinal') {
 
@@ -84,6 +112,11 @@ carregarListas() {
     await popover.present();
 
     const { data } = await popover.onDidDismiss();
+
+    if (data?.cleared) {
+      this[campo] = null;
+      return;
+    }
 
     if (data?.date) {
       this[campo] = data.date;
@@ -105,8 +138,8 @@ carregarListas() {
     const filtros = {
       origemTanqueId: this.origemTanqueId,
       equipamentoId: this.equipamentoId,
-      dataInicial: this.dataInicial,
-      dataFinal: this.dataFinal,
+      dataInicial: this.dataInicial || '',
+      dataFinal: this.dataFinal || '',
     };
 
     this.router.navigate(

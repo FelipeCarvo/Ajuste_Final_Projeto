@@ -54,19 +54,12 @@
       (click)="openCalendar($event, 'dataInicial')">
     </ion-input>
 
-    <!-- ❌ BOTÃO LIMPAR -->
-    <button
-      *ngIf="dataInicial"
-      type="button"
-      class="os-date-clear"
-      (click)="limparData('dataInicial', $event)">
-      <ion-icon name="close-outline"></ion-icon>
-    </button>
-
     <!-- 📅 BOTÃO CALENDÁRIO -->
     <button
       type="button"
       class="os-date-btn"
+      title="Selecionar data inicial"
+      aria-label="Selecionar data inicial"
       (click)="openCalendar($event, 'dataInicial')">
       <ion-icon name="calendar-clear-outline"></ion-icon>
     </button>
@@ -88,19 +81,12 @@
       (click)="openCalendar($event, 'dataFinal')">
     </ion-input>
 
-    <!-- ❌ BOTÃO LIMPAR -->
-    <button
-      *ngIf="dataFinal"
-      type="button"
-      class="os-date-clear"
-      (click)="limparData('dataFinal', $event)">
-      <ion-icon name="close-outline"></ion-icon>
-    </button>
-
     <!-- 📅 BOTÃO CALENDÁRIO -->
     <button
       type="button"
       class="os-date-btn"
+      title="Selecionar data final"
+      aria-label="Selecionar data final"
       (click)="openCalendar($event, 'dataFinal')">
       <ion-icon name="calendar-clear-outline"></ion-icon>
     </button>
