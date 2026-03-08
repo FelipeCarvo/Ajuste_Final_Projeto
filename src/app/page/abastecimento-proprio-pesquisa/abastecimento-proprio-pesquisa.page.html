@@ -23,7 +23,7 @@
         <div class="os-line os-date">
           <span class="os-label">Data:</span>
           <span class="os-value">
-            {{ item.dataAbastecimento | date:'dd/MM/yyyy' }}
+            {{ formatarData(obterDataAbastecimento(item)) || '-' }}
           </span>
         </div>
 
@@ -95,14 +95,6 @@
           <span class="os-label">Insumo:</span>
           <span class="os-value">
             {{ item.insumoDesc }}
-          </span>
-        </div>
-
-        <!-- FORNECEDOR -->
-        <div class="os-line">
-          <span class="os-label">Fornecedor/Posto:</span>
-          <span class="os-value">
-            {{ obterFornecedorPosto(item) }}
           </span>
         </div>
 

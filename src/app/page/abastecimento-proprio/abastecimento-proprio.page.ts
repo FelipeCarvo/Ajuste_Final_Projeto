@@ -133,7 +133,26 @@ carregarListas() {
   }
 
   // PESQUISAR
-  pesquisar() {
+  async pesquisar() {
+
+    const possuiFiltro = [
+      this.origemTanqueId,
+      this.equipamentoId,
+      this.dataInicial,
+      this.dataFinal,
+    ].some((value) => String(value || '').trim() !== '');
+
+    if (!possuiFiltro) {
+      const alert = await this.alertCtrl.create({
+        header: 'Atenção!',
+        message: 'Informe ao menos um filtro antes de pesquisar os abastecimentos.',
+        buttons: ['OK'],
+        backdropDismiss: true,
+      });
+
+      await alert.present();
+      return;
+    }
 
     const filtros = {
       origemTanqueId: this.origemTanqueId,

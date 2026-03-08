@@ -38,10 +38,11 @@ export class OrdemServicoPage implements OnInit {
 
   // 🔹 STATUS
   statusLista = [
-    { valor: 1, descricao: 'Aberto' },
-    { valor: 2, descricao: 'Em andamento' },
-    { valor: 3, descricao: 'Concluído' },
-    { valor: 4, descricao: 'Cancelado' }
+    { valor: 0, descricao: 'Aberta' },
+    { valor: 1, descricao: 'Serviço Iniciado' },
+    { valor: 2, descricao: 'Serviço Concluído' },
+    { valor: 3, descricao: 'Fechada' },
+    { valor: 4, descricao: 'Reprov./Cancelada' }
   ];
 
   // 🔹 CAMPOS DE DATA (USADO NO HTML)
@@ -200,7 +201,9 @@ onEmpreendimentoSelecionado(item: any) {
   }
 
   onStatusSelecionado(item: any) {
-    this.filtro.status = item?.valor || '';
+    this.filtro.status = item?.valor !== undefined && item?.valor !== null
+      ? String(item.valor)
+      : '';
   }
 
   // 🔹 CALENDÁRIO
@@ -250,7 +253,21 @@ onEmpreendimentoSelecionado(item: any) {
   }
 
   // 🔹 PESQUISAR
-pesquisar() {
+async pesquisar() {
+  const possuiFiltro = Object.values(this.filtro).some((value) => String(value || '').trim() !== '');
+
+  if (!possuiFiltro) {
+    const alert = await this.alertCtrl.create({
+      header: 'Atenção!',
+      message: 'Informe ao menos um filtro antes de pesquisar as Ordens de Serviço.',
+      buttons: ['OK'],
+      backdropDismiss: true,
+    });
+
+    await alert.present();
+    return;
+  }
+
   this.router.navigate(['/tabs/ordem-servico-pesquisa'], {
     queryParams: {
       numeroOs: this.filtro.numeroOs,

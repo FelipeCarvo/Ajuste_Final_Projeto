@@ -12,24 +12,11 @@ import { AbastecimentoService } from '../../services/abastecimento.service';
   standalone: false
 })
 export class AbastecimentoPostosPage implements OnInit {
-
-  // ===============================
-  // 🔹 LISTAS DO AUTOCOMPLETE
-  // ===============================
-
   fornecedoresLista: any[] = [];
   equipamentosLista: any[] = [];
 
-  // ===============================
-  // 🔹 IDS SELECIONADOS
-  // ===============================
-
   fornecedorId: string | null = null;
   equipamentoId: string | null = null;
-
-  // ===============================
-  // 🔹 OUTROS CAMPOS
-  // ===============================
 
   numeroVoucher = '';
 
@@ -43,10 +30,6 @@ export class AbastecimentoPostosPage implements OnInit {
     private alertCtrl: AlertController,
     private abastecimentoService: AbastecimentoService
   ) {}
-
-  // ===============================
-  // 🔹 INIT
-  // ===============================
 
   ngOnInit() {
     this.carregarListas();
@@ -85,39 +68,25 @@ export class AbastecimentoPostosPage implements OnInit {
     await alert.present();
   }
 
-  // ===============================
-  // 🔹 CARREGAR LISTAS REAIS (API)
-  // ===============================
-
   carregarListas() {
-
-    // 🔥 FORNECEDORES (mesma API da edição)
     this.abastecimentoService.listarFornecedores().subscribe({
       next: dados => {
         this.fornecedoresLista = dados ?? [];
       },
-      error: err => {
-        console.error('[FORNECEDORES] Erro ao carregar:', err);
+      error: () => {
         this.fornecedoresLista = [];
       }
     });
 
-    // 🔥 EQUIPAMENTOS (mesma API da edição)
     this.abastecimentoService.listarEquipamentosMobile().subscribe({
       next: dados => {
         this.equipamentosLista = dados ?? [];
       },
-      error: err => {
-        console.error('[EQUIPAMENTOS] Erro ao carregar:', err);
+      error: () => {
         this.equipamentosLista = [];
       }
     });
-
   }
-
-  // ===============================
-  // 🔹 EVENTOS AUTOCOMPLETE
-  // ===============================
 
   onFornecedorSelecionado(item: any) {
     this.fornecedorId = item?.id ?? null;
@@ -127,17 +96,9 @@ export class AbastecimentoPostosPage implements OnInit {
     this.equipamentoId = item?.id ?? null;
   }
 
-  // ===============================
-  // 🔹 HEADER
-  // ===============================
-
   onBack() {
     this.router.navigate(['/tabs/abastecimento']);
   }
-
-  // ===============================
-  // 🔹 CALENDÁRIO
-  // ===============================
 
   async openCalendar(event: any, fieldName: 'dataInicial' | 'dataFinal') {
     const popover = await this.popoverCtrl.create({
@@ -179,11 +140,27 @@ export class AbastecimentoPostosPage implements OnInit {
     }
   }
 
-  // ===============================
-  // 🔹 PESQUISAR
-  // ===============================
+  async pesquisar() {
+    const possuiFiltro = [
+      this.fornecedorId,
+      this.equipamentoId,
+      this.dataInicial,
+      this.dataFinal,
+      this.numeroVoucher,
+    ].some((value) => String(value || '').trim() !== '');
 
-  pesquisar() {
+    if (!possuiFiltro) {
+      const alert = await this.alertCtrl.create({
+        header: 'Atenção!',
+        message: 'Informe ao menos um filtro antes de pesquisar os abastecimentos.',
+        buttons: ['OK'],
+        backdropDismiss: true,
+      });
+
+      await alert.present();
+      return;
+    }
+
     const filtros = {
       fornecedorId: this.fornecedorId,
       equipamentoId: this.equipamentoId,

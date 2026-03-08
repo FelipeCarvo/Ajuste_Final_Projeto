@@ -25,10 +25,11 @@ export class OrdemServicoPesquisaPage implements OnInit {
 
     // 🔥 ALTERAÇÃO 2 - MAPA OFICIAL DE STATUS (PADRONIZAÇÃO FRONT)
   private statusMap: Record<number, string> = {
-    1: 'Aberto',
-    2: 'Em andamento',
-    3: 'Concluído',
-    4: 'Cancelado',
+    0: 'Aberta',
+    1: 'Serviço Iniciado',
+    2: 'Serviço Concluído',
+    3: 'Fechada',
+    4: 'Reprov./Cancelada',
   };
 
   private isGuid(value: string): boolean {
@@ -258,16 +259,32 @@ if (empreendimentoValor) {
         dataConclusaoFinal: params.get('dataConclusaoFinal'),
       };
 
+      const possuiFiltroInformado =
+        !!highlightOs ||
+        Object.values(filtrosTela).some((value) => String(value || '').trim() !== '');
+
+      if (!possuiFiltroInformado) {
+        this.listaOs = [];
+        this.carregando = false;
+        this.router.navigate(['/tabs/ordem-servico'], {
+          queryParams: { semResultado: null },
+          replaceUrl: true,
+        });
+        return;
+      }
+
       // Backend geralmente filtra por IDs (GUID) e por alguns campos específicos.
       // Para inputs livres (ex.: "143 Iguana"), fazemos filtro local como fallback.
       const numeroDigits = ((filtrosTela.numeroOs || '').match(/\d+/g) || []).join('') || null;
+      const numeroOsFiltro = numeroDigits || (highlightOs?.trim() || null);
       const empreendimentoTrim = (filtrosTela.empreendimento || '').trim();
       const equipamentoTrim = (filtrosTela.equipamento || '').trim();
       const causaTrim = (filtrosTela.causaIntervencao || '').trim();
       const manutentorTrim = (filtrosTela.manutentor || '').trim();
 
 const filtrosApi = {
-  osId: (numeroDigits && this.isGuid(numeroDigits)) ? numeroDigits : null,
+  osCodigo: numeroOsFiltro,
+  osId: null,
 
   empreendimentoId:
     (empreendimentoTrim && this.isGuid(empreendimentoTrim))

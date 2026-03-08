@@ -48,7 +48,12 @@ export class AutocompleteComponent implements OnChanges {
   }
 
   private sincronizarValorSelecionado() {
-    if (!this.valorSelecionado || !this.lista?.length) {
+    const valorNaoInformado =
+      this.valorSelecionado === null ||
+      this.valorSelecionado === undefined ||
+      String(this.valorSelecionado).trim() === '';
+
+    if (valorNaoInformado || !this.lista?.length) {
       this.textoBusca = '';
       return;
     }

@@ -24,7 +24,11 @@ type BombaDto = {
   bombaCod?: string;
 };
 
-type EquipamentoDto = { id: string; descricao: string };
+type EquipamentoDto = {
+  id: string;
+  descricao: string;
+  tipoControle?: string;
+};
 type BicoDto = { bicoId: string; bicoDescricao?: string; bicoCdg?: string | number };
 
 type DestinoDto = {
@@ -784,7 +788,11 @@ ngOnInit() {
       if (!this.equipamentos.find(e => String(e.id) === String(equipamentoRaw))) {
         this.equipamentos = [
           ...this.equipamentos,
-          { id: equipamentoRaw, descricao: dados.modelo || 'Equipamento carregado' }
+          {
+            id: equipamentoRaw,
+            descricao: dados.modelo || 'Equipamento carregado',
+            tipoControle: this.getItemValue(dados, ['tipoControle', 'TipoControle'])
+          }
         ];
       }
       this.equipamentoSelecionado = String(equipamentoRaw);
@@ -1387,10 +1395,7 @@ private carregarAplicacoes() {
     )
     .subscribe({
       next: (res: any) => {
-        console.log('[DEBUG] consultarAplicacaoPrev retorno bruto:', res);
-
         const lista = this.extrairLista<any>(res);
-        console.log('[DEBUG] consultarAplicacaoPrev lista extraida:', lista);
 
         this.aplicacoes = lista
           .map((a: any) => {
@@ -1403,10 +1408,7 @@ private carregarAplicacoes() {
           })
           .filter((a: any) => !!a.id && !!String(a.descricao ?? '').trim());
 
-        console.log('[DEBUG] consultarAplicacaoPrev aplicacoes mapeadas:', this.aplicacoes);
-
         this.aplicacaoHabilitada = this.aplicacoes.length > 0;
-        console.log('[DEBUG] aplicacaoHabilitada:', this.aplicacaoHabilitada);
 
         if (!this.aplicacaoHabilitada) {
           this.aplicacaoSelecionada = null;
@@ -1540,12 +1542,35 @@ private carregarEquipamentos() {
     next: (eqps: any[]) => {
       this.equipamentos = eqps.map(e => ({
         id: e.id,
-        descricao: e.descricao
+        descricao: e.descricao,
+        tipoControle: e.tipoControle ?? e.TipoControle ?? e.tpControle
       }));
     },
     error: () => {},
   });
 
+}
+
+private isDestinoEquipamentoSelecionado(): boolean {
+  const destinoObj = (this.destinos ?? []).find(
+    d => String(d.id) === String(this.destinoSelecionado)
+  );
+
+  const tipoDestino = String(destinoObj?.destinoTipo ?? '')
+    .trim()
+    .toUpperCase();
+
+  return tipoDestino === 'M';
+}
+
+private getTipoControleEquipamentoSelecionado(): string {
+  const equipamento = (this.equipamentos ?? []).find(
+    e => String(e.id) === String(this.equipamentoSelecionado)
+  );
+
+  return String(equipamento?.tipoControle ?? '')
+    .trim()
+    .toUpperCase();
 }
 
 
@@ -1624,11 +1649,6 @@ onAplicacaoChange(event: any) {
     return;
   }
 
-  if (this.odometro == null || this.odometro <= 0) {
-    this.toast('Odômetro obrigatório', 'warning');
-    return;
-  }
-
   // ------------------ DATA FORMATADA ------------------
 
  // ------------------ DATA FORMATADA ------------------
@@ -1664,6 +1684,24 @@ const dataFormatada = `${dataBase}T00:00:00`;
     return;
   }
 
+  const destinoEhEquipamento = this.isDestinoEquipamentoSelecionado();
+  const tipoControleEquipamento = this.getTipoControleEquipamentoSelecionado();
+
+  if (destinoEhEquipamento && !this.equipamentoSelecionado) {
+    this.toast('Equipamento obrigatório para destino Equipamento', 'warning');
+    return;
+  }
+
+  if (destinoEhEquipamento && tipoControleEquipamento === 'V' && (this.odometro == null || this.odometro <= 0)) {
+    this.toast('Odômetro obrigatório para equipamento com tipo de controle V', 'warning');
+    return;
+  }
+
+  if (destinoEhEquipamento && tipoControleEquipamento === 'H' && (this.horimetro == null || this.horimetro <= 0)) {
+    this.toast('Horímetro obrigatório para equipamento com tipo de controle H', 'warning');
+    return;
+  }
+
 // ------------------ EMPREENDIMENTO ------------------
 
 const guidZerado = '00000000-0000-0000-0000-000000000000';
@@ -1690,17 +1728,6 @@ if (!this.blocoSelecionado) {
 }
 
 */
-
-
-// Troca/Reposição so deve ser exigido quando a consulta de aplicacao
-// retornou registros e os combos ficaram habilitados.
-if (this.aplicacaoHabilitada && !this.tipoPrevAbast) {
-  this.toast('Troca / Reposição obrigatória', 'warning');
-  return;
-}
-
-
-
 // ---------------- PARAMS ----------------
 
 const params: Record<string, unknown> = {

@@ -6,8 +6,6 @@ import { forkJoin, of } from 'rxjs';
 import { CalendarPopoverComponent } from '../../components/calendar-popover/calendar-popover.component';
 import { AbastecimentoService } from '../../services/abastecimento.service';
 
-//import { AutocompleteComponent } from '../../components/autocomplete/autocomplete.component';
-
 type LookupId = string | number;
 type LookupItem = {
   id: LookupId;
@@ -23,13 +21,9 @@ type LookupItem = {
   standalone: false
 })
 export class AbastecimentoPostosEdicaoPage implements OnInit {
-
-
   dtRetirada: string | null = null;
   hodometroData: string | null = null;
   nCtlPostoData: string | null = null;
-
-  // Campos do formulário
   equipamento: LookupId | null = null;
   empreendimento: LookupId | null = null;
   private empreendimentoCod: LookupId | null = null;
@@ -49,8 +43,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   horimetro: number | null = null;
   retorno: boolean = true;
   estoque: boolean = false;
-
-  // Listas para os selects
   equipamentos: LookupItem[] = [];
   empreendimentos: LookupItem[] = [];
   empresas: LookupItem[] = [];
@@ -64,7 +56,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   private ultimoAbastecimentoIdCarregado: string | null = null;
 
   ionViewWillLeave() {
-    // Limpa o último ID carregado ao sair da página para garantir atualização correta ao voltar
     this.ultimoAbastecimentoIdCarregado = null;
   }
 
@@ -99,8 +90,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       next: dados => {
         this.equipamentos = dados;
       },
-      error: err => {
-        console.error('[DEBUG][EQUIPAMENTOS] Erro ao carregar:', err);
+      error: () => {
       }
     });
     this.abastecimentoService.listarEmpreendimentos().subscribe({
@@ -123,24 +113,20 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       },
       error: err => {}
     });
-    // Centro de Despesa depende do Insumo (doc: usar LookupKey = planoContasPadraoId do Insumo)
     this.centrosDespesas = [];
   }
 
   ionViewWillEnter() {
     const navState = this.getNavigationState();
 
-    // NOVO: sempre abrir formulário limpo
     if (navState.mode === 'novo' || (!navState.item && !navState.abastecimentoId)) {
       this.resetForm();
       this.ultimoAbastecimentoIdCarregado = null;
       return;
     }
 
-    // Sempre resetar o formulário ao entrar, mesmo se o ID for igual ao anterior
     this.resetForm();
 
-    // Resolve empresa e empreendimento para garantir selects corretos
     this.resolverEmpresaPendente();
     this.resolverEmpreendimentoPendenteECarregarDependencias();
     if (this.isGuid(this.empreendimento)) {
@@ -149,7 +135,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       this.carregarBlocos(this.empreendimento, this.bloco ?? undefined);
     }
 
-    // Busca detalhe completo pelo abastecimentoId SEM checar se é igual ao último carregado
     if (navState.abastecimentoId) {
       this.ultimoAbastecimentoIdCarregado = navState.abastecimentoId;
       this.abastecimentoService.consultarAbastecimentoPostoPorId(navState.abastecimentoId).subscribe({
@@ -208,8 +193,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     this.horimetro = null;
     this.retorno = true;
     this.estoque = false;
-
-    // listas dependentes
     this.centrosDespesas = [];
     this.etapas = [];
     this.insumos = [];
@@ -345,8 +328,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       return current === null || typeof current === 'undefined' || current === '';
     };
 
-
-    // IDs
     const fornecedorRaw = this.getItemValue(item, ['fornecedorId', 'IdFornecedor', 'idFornecedor']);
     if (shouldSet(this.fornecedor) && (typeof fornecedorRaw === 'string' || typeof fornecedorRaw === 'number')) {
       this.fornecedor = fornecedorRaw;
@@ -384,8 +365,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
         }
       }
     }
-    // LOG DETALHADO PARA DEBUG
-    // Se empresaValue não for GUID, tenta mapear para o GUID correto usando a lista de empresas
     if (empresaValue && this.empresas && Array.isArray(this.empresas) && this.empresas.length > 0) {
       const isGuid = (val: unknown) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
       if (!isGuid(empresaValue)) {
@@ -481,7 +460,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       this.centroDespesas = centroRaw;
     }
 
-    // Campos simples
     const obs = this.getItemValue(item, ['observacao', 'Observacao']);
     if (shouldSet(this.observacao) && typeof obs === 'string') this.observacao = obs;
 
@@ -500,7 +478,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     const horimetro = this.getItemValue(item, ['horimetro', 'Horimetro']);
     if (shouldSet(this.horimetro)) this.horimetro = typeof horimetro === 'number' ? horimetro : (typeof horimetro === 'string' ? Number(horimetro) : null);
 
-    // No retorno da API aparece como numVoucher; na gravação usamos NumeroControlePosto
     const voucher = this.getItemValue(item, ['NumeroControlePosto', 'numeroControlePosto', 'numVoucher', 'voucher']);
     if (shouldSet(this.numeroControlePosto)) this.numeroControlePosto = typeof voucher === 'string' || typeof voucher === 'number' ? String(voucher) : '';
 
@@ -515,8 +492,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     if (estoqueFlag !== null) {
       this.estoque = estoqueFlag;
     }
-
-    // [LOG] Diagnóstico: estado final do formulário após preenchimento
   }
 
   private getCentroDespesaValue(item: unknown): string | null {
@@ -599,11 +574,10 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
 
   onEmpreendimentoChange(empreendimentoId: LookupId) {
     this.empreendimento = empreendimentoId;
-    this.etapa = null; // Limpa etapa anterior
-    this.insumo = null; // Limpa insumo anterior
-    this.centroDespesas = null; // Limpa seleção
+    this.etapa = null;
+    this.insumo = null;
+    this.centroDespesas = null;
     this.carregarCentrosDespesas(this.planoContasPadraoId ?? undefined);
-    // Sempre carregar etapas apenas do empreendimento ao trocar empreendimento
     this.carregarEtapas({ empreendimentoId }, () => {
       this.carregarInsumos(empreendimentoId);
       this.carregarBlocos(empreendimentoId);
@@ -629,7 +603,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   }
   onEmpresaChange(empresaId: LookupId) {
     this.empresa = empresaId;
-    this.centroDespesas = null; // Limpa seleção
+    this.centroDespesas = null;
     this.carregarCentrosDespesas(this.planoContasPadraoId ?? undefined);
   }
   carregarCentrosDespesas(lookupKey?: string, preservarSelecao?: LookupId | null) {
@@ -638,13 +612,10 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       ? String(preservarSelecao)
       : '';
 
-    // 1) Carrega lista principal: com lookupKey (quando existe) OU com valorSelecionado (quando não existe).
     const obsPrincipal = lookupKey
       ? this.abastecimentoService.listarCentrosDespesas('', '', lookupKey)
       : this.abastecimentoService.listarCentrosDespesas('', selecionadoStr, undefined);
 
-    // 2) Se temos lookupKey e já existe um selecionado, buscamos também o item selecionado sem filtro
-    // para garantir que ele apareça na lista (alguns endpoints retornam apenas os “primeiros N”).
     const obsSelecionado = (lookupKey && selecionadoStr)
       ? this.abastecimentoService.listarCentrosDespesas('', selecionadoStr, undefined)
       : of([] as unknown[]);
@@ -675,13 +646,10 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     callback?: () => void
   ) {
     if (!params.empreendimentoId) {
-      console.log('[DEBUG] carregarEtapas: empreendimentoId vazio');
       this.etapas = [];
       if (callback) callback();
       return;
     }
-
-    console.log('[DEBUG] carregarEtapas: iniciando com', params);
 
     const serviceParams = {
       empreendimentoId: String(params.empreendimentoId),
@@ -692,24 +660,18 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
         : undefined
     };
 
-    console.log('[DEBUG] carregarEtapas: serviceParams', serviceParams);
-
     this.abastecimentoService
       .listarEtapas(serviceParams)
       .subscribe(
         dados => {
-          console.log('[DEBUG] carregarEtapas: resposta do backend', dados);
           if (Array.isArray(dados) && dados.length > 0) {
             this.etapas = dados;
-            console.log('[DEBUG] carregarEtapas: etapas carregadas', this.etapas.length);
           } else {
             this.etapas = [];
-            console.log('[DEBUG] carregarEtapas: nenhuma etapa retornada');
           }
           if (callback) callback();
         },
-        error => {
-          console.error('[DEBUG] carregarEtapas: erro', error);
+        () => {
           this.etapas = [];
           if (callback) callback();
         }
@@ -723,9 +685,6 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     }
     this.abastecimentoService.listarInsumos(String(empreendimentoId)).subscribe(dados => {
       this.insumos = dados;
-
-      // Se já existe insumo selecionado (ex.: vindo de Ver detalhes), dispara a lógica
-      // para carregar Centro de Despesa e manter a seleção se possível.
       if (this.insumo !== null && typeof this.insumo !== 'undefined') {
         this.onInsumoChange(this.insumo);
       }
@@ -861,15 +820,10 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
         Retorno: (this.retorno ?? true) ? 1 : 0,
         Estoque: (this.estoque ?? false) ? 1 : 0,
       };
-    // Se estiver editando, incluir o AbastecimentoId no payload
     if (this.ultimoAbastecimentoIdCarregado) {
       payload['IdAbastecimento'] = this.ultimoAbastecimentoIdCarregado;
     }
-    // Remover campos nulos ou indefinidos
     Object.keys(payload).forEach(key => (payload[key] === null || payload[key] === undefined) && delete payload[key]);
-    // Chamar service para gravar
-
-console.log('PAYLOAD ENVIADO:', payload);
 
     this.abastecimentoService.gravarAbastecimento(payload).subscribe({
       next: (res) => {

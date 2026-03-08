@@ -63,6 +63,18 @@ this.filtrosAtuais = {
   dataFinal: (params['dataFinal'] ?? null) as string | null,
   numVoucher: (params['numVoucher'] ?? '')?.toString(),
 };
+
+      const possuiFiltroInformado = Object.values(this.filtrosAtuais).some(
+        (value) => String(value || '').trim() !== ''
+      );
+
+      if (!possuiFiltroInformado) {
+        this.resultados = [];
+        this.carregando = false;
+        this.router.navigate(['/tabs/abastecimento-postos'], { replaceUrl: true });
+        return;
+      }
+
       this.buscarAbastecimentos(this.filtrosAtuais);
     });
   }
