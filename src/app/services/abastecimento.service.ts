@@ -323,9 +323,8 @@ listarColaboradoresFrentista() {
   }) {
     const params: Record<string, unknown> = {
       TpAbastecimento: 0,
-      Origem: 3, // Só registros feitos pelo app
       // TpAbastecimento: 0 = Abastecimento Próprio
-      // Não filtramos por Origem para buscar TODOS os registros
+      // Não filtramos por Origem para buscar todos os registros retornados pela API
     };
 
     if (filtros.origemTanque) params.BombaId = filtros.origemTanque;

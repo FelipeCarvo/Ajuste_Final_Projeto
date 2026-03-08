@@ -46,6 +46,59 @@ export class AbastecimentoProprioPesquisaPage implements OnInit {
     this.buscarAbastecimentos(this.filtrosAtuais);
   }
 
+  formatarOrigemTanque(item: AbastecimentoConsulta): string {
+    const codigo = String(item?.comboioBombaCdg ?? '').trim();
+    const descricao = String(item?.comboioBombaDescr ?? '').trim();
+
+    if (codigo && descricao) return `${codigo} - ${descricao}`;
+    return codigo || descricao || '-';
+  }
+
+  formatarEmpreendimento(item: AbastecimentoConsulta): string {
+    const codigo = item?.emprdCod !== null && typeof item?.emprdCod !== 'undefined'
+      ? String(item.emprdCod).trim()
+      : '';
+    const descricao = String(item?.emprDesc ?? '').trim();
+
+    if (codigo && descricao) return `${codigo} - ${descricao}`;
+    return codigo || descricao || '';
+  }
+
+  formatarDestino(item: AbastecimentoConsulta): string {
+    const codigo = String(item?.destino ?? item?.destinoTipo ?? '').trim();
+    const descricao = String(item?.destinoDesc ?? '').trim();
+
+    if (codigo && descricao) return `${codigo} - ${descricao}`;
+    return codigo || descricao || '-';
+  }
+
+  deveExibirBlocoEquipamento(item: AbastecimentoConsulta): boolean {
+    const destino = String(item?.destino ?? '').trim().toUpperCase();
+    const destinoTipo = String(item?.destinoTipo ?? '').trim().toUpperCase();
+    const destinoDescricao = String(item?.destinoDesc ?? '').trim().toLowerCase();
+
+    return destino === 'EQ' || destinoTipo === 'M' || destinoDescricao === 'equipamento';
+  }
+
+  obterCodigoEquipamento(item: AbastecimentoConsulta): string {
+    return String(item?.codEquipamento ?? item?.identificador ?? '').trim();
+  }
+
+  obterDescricaoEquipamento(item: AbastecimentoConsulta): string {
+    return String(item?.modelo ?? '').trim();
+  }
+
+  obterPlaca(item: AbastecimentoConsulta): string {
+    const placa = String(item?.placa ?? '').trim();
+    if (!placa || placa.toLowerCase() === 'sem placa') return '';
+    return placa;
+  }
+
+  obterFornecedorPosto(item: AbastecimentoConsulta): string {
+    const fornecedor = String(item?.fornecedorRazao ?? '').trim();
+    return fornecedor || 'Não informado';
+  }
+
   private buscarAbastecimentos(filtros: {
     origemTanque?: string;
     equipamento?: string;

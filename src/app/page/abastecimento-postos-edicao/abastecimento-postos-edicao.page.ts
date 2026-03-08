@@ -47,7 +47,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   total: number | null = null;
   hodometro: number | null = null;
   horimetro: number | null = null;
-  retorno: boolean = false;
+  retorno: boolean = true;
   estoque: boolean = false;
 
   // Listas para os selects
@@ -206,7 +206,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     this.total = null;
     this.hodometro = null;
     this.horimetro = null;
-    this.retorno = false;
+    this.retorno = true;
     this.estoque = false;
 
     // listas dependentes
@@ -288,7 +288,13 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
         empObj['idCod'],
       ].filter(v => v !== null && typeof v !== 'undefined');
 
-      return candidatosCodigo.some(v => String(v) === codStr);
+      if (candidatosCodigo.some(v => String(v) === codStr)) {
+        return true;
+      }
+
+      const descricao = String(emp.descricao ?? empObj['nome'] ?? empObj['label'] ?? '').trim();
+      const matchCodigoDescricao = descricao.match(/^\s*(\d+)/);
+      return matchCodigoDescricao?.[1] === codStr;
     });
 
     if (encontrado?.id) {
@@ -499,13 +505,15 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     if (shouldSet(this.numeroControlePosto)) this.numeroControlePosto = typeof voucher === 'string' || typeof voucher === 'number' ? String(voucher) : '';
 
     const retorno = this.getItemValue(item, ['Retorno', 'retorno', 'numRetornoPosto']);
-    if (retorno !== null && typeof retorno !== 'undefined') {
-      this.retorno = retorno === 1 || retorno === true || retorno === '1';
+    const retornoFlag = this.parseBooleanFlag(retorno);
+    if (retornoFlag !== null) {
+      this.retorno = retornoFlag;
     }
 
     const estoque = this.getItemValue(item, ['Estoque', 'estoque']);
-    if (estoque !== null && typeof estoque !== 'undefined') {
-      this.estoque = estoque === 1 || estoque === true || estoque === '1';
+    const estoqueFlag = this.parseBooleanFlag(estoque);
+    if (estoqueFlag !== null) {
+      this.estoque = estoqueFlag;
     }
 
     // [LOG] Diagnóstico: estado final do formulário após preenchimento
@@ -572,6 +580,19 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
       if (!trimmed) return null;
       const parsed = Number(trimmed.replace(',', '.'));
       return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  }
+
+  private parseBooleanFlag(value: unknown): boolean | null {
+    if (value === null || typeof value === 'undefined') return null;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return null;
+      if (['1', 'true', 's', 'sim', 'yes', 'y'].includes(normalized)) return true;
+      if (['0', 'false', 'n', 'nao', 'não', 'no'].includes(normalized)) return false;
     }
     return null;
   }

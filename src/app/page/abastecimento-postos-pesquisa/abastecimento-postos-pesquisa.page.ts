@@ -84,6 +84,38 @@ this.filtrosAtuais = {
     }
   }
 
+  private isVoucherCompativelComServidor(value?: string): boolean {
+    const voucher = (value || '').trim();
+    if (!voucher || !/^\d+$/.test(voucher)) return false;
+
+    const normalized = voucher.replace(/^0+(?=\d)/, '');
+    const maxInt64 = '9223372036854775807';
+
+    if (normalized.length < maxInt64.length) return true;
+    if (normalized.length > maxInt64.length) return false;
+    return normalized <= maxInt64;
+  }
+
+  private voltarParaPesquisaComSemResultado(filtros: {
+    fornecedor?: string;
+    equipamento?: string;
+    dataInicial?: string | null;
+    dataFinal?: string | null;
+    numVoucher?: string;
+  }) {
+    this.router.navigate(['/tabs/abastecimento-postos'], {
+      queryParams: {
+        fornecedorId: filtros.fornecedor || '',
+        equipamentoId: filtros.equipamento || '',
+        dataInicial: filtros.dataInicial || '',
+        dataFinal: filtros.dataFinal || '',
+        numVoucher: filtros.numVoucher || '',
+        semResultado: '1',
+      },
+      replaceUrl: true,
+    });
+  }
+
   private aplicarFiltrosLocal(dados: any[], filtros: {
     fornecedor?: string;
     equipamento?: string;
@@ -140,11 +172,14 @@ this.filtrosAtuais = {
     const serverFiltros: any = {
       dataInicial: filtros.dataInicial || null,
       dataFinal: filtros.dataFinal || null,
-      numVoucher: (filtros.numVoucher || '').trim() || null,
     };
+    const numVoucher = (filtros.numVoucher || '').trim();
 
     if (fornecedor && this.isGuid(fornecedor)) serverFiltros.fornecedorId = fornecedor;
     if (equipamento && this.isGuid(equipamento)) serverFiltros.equipamentoId = equipamento;
+    if (this.isVoucherCompativelComServidor(numVoucher)) {
+      serverFiltros.numVoucher = numVoucher;
+    }
 
     this.carregando = true;
     this.abastecimentoService.consultarAbastecimentoPosto(serverFiltros)
@@ -153,14 +188,15 @@ this.filtrosAtuais = {
           const lista = Array.isArray(dados) ? dados : [];
           this.resultados = this.aplicarFiltrosLocal(lista, filtros);
           this.carregando = false;
-          if (Array.isArray(dados) && dados.length > 0) {
-            // dados retornados com sucesso
-          } else {
-            // nenhum dado retornado
+          if (this.resultados.length === 0) {
+            this.voltarParaPesquisaComSemResultado(filtros);
           }
         },
         error: (erro) => {
           this.carregando = false;
+          if ((erro?.status === 400 && numVoucher) || erro?.status === 404) {
+            this.voltarParaPesquisaComSemResultado(filtros);
+          }
         }
       });
   }

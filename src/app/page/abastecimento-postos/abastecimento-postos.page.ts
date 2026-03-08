@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { PopoverController } from '@ionic/angular';
-import { Router } from '@angular/router';
+import { AlertController, PopoverController } from '@ionic/angular';
+import { ActivatedRoute, Router } from '@angular/router';
 import { format, parseISO } from 'date-fns';
 import { CalendarPopoverComponent } from '../../components/calendar-popover/calendar-popover.component';
 import { AbastecimentoService } from '../../services/abastecimento.service';
@@ -39,6 +39,8 @@ export class AbastecimentoPostosPage implements OnInit {
   constructor(
     private popoverCtrl: PopoverController,
     private router: Router,
+    private route: ActivatedRoute,
+    private alertCtrl: AlertController,
     private abastecimentoService: AbastecimentoService
   ) {}
 
@@ -48,6 +50,39 @@ export class AbastecimentoPostosPage implements OnInit {
 
   ngOnInit() {
     this.carregarListas();
+    this.restaurarFiltrosDaPesquisa();
+  }
+
+  private restaurarFiltrosDaPesquisa() {
+    this.route.queryParamMap.subscribe((params) => {
+      this.fornecedorId = params.get('fornecedorId') ?? '';
+      this.equipamentoId = params.get('equipamentoId') ?? '';
+      this.dataInicial = params.get('dataInicial');
+      this.dataFinal = params.get('dataFinal');
+      this.numeroVoucher = params.get('numVoucher') ?? '';
+
+      if (params.get('semResultado') === '1') {
+        void this.exibirAlertaSemResultado();
+
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { semResultado: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      }
+    });
+  }
+
+  private async exibirAlertaSemResultado() {
+    const alert = await this.alertCtrl.create({
+      header: 'Atenção!',
+      message: 'A pesquisa não retornou resultados. Ajuste os filtros e tente novamente.',
+      buttons: ['OK'],
+      backdropDismiss: true,
+    });
+
+    await alert.present();
   }
 
   // ===============================

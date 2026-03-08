@@ -79,6 +79,10 @@ export class AutocompleteComponent implements OnChanges {
   }
 
   abrirDropdown() {
+    if (this.disabled) {
+      return;
+    }
+
     this.aberto = true;
     this.listaFiltrada = [...this.lista];
 
@@ -88,6 +92,11 @@ export class AutocompleteComponent implements OnChanges {
   }
 
   filtrar() {
+    if (this.disabled) {
+      this.aberto = false;
+      return;
+    }
+
     const termo = (this.textoBusca || '').toLowerCase();
     this.aberto = true;
 
@@ -108,6 +117,8 @@ export class AutocompleteComponent implements OnChanges {
   }
 
   limpar() {
+    if (this.disabled) return;
+
     this.textoBusca = '';
     this.listaFiltrada = [...this.lista];
     this.aberto = false;

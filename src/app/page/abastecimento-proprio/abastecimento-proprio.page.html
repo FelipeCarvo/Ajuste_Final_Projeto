@@ -24,6 +24,7 @@
 <app-autocomplete
   [lista]="origensLista"
   campoDescricao="descricao"
+  placeholder="Selecione uma origem/tanque"
   [valorSelecionado]="origemTanqueId"
   (selecionado)="onOrigemSelecionado($event)">
 </app-autocomplete>
@@ -35,6 +36,7 @@
 <app-autocomplete
   [lista]="equipamentosLista"
   campoDescricao="descricao"
+  placeholder="Selecione um equipamento"
   [valorSelecionado]="equipamentoId"
   (selecionado)="onEquipamentoSelecionado($event)">
 </app-autocomplete>
