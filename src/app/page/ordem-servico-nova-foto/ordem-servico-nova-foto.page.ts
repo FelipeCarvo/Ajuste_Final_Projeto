@@ -345,16 +345,16 @@ export class OrdemServicoNovaFotoPage {
       // ignore (quota/localStorage indisponível)
     }
   }
+private async toast(message: string) {
+  const toast = await this.toastCtrl.create({
+    message,
+    duration: 2500,
+    position: 'bottom',
+    cssClass: 'toast-custom'
+  });
 
-  private async toast(message: string, color: 'success' | 'warning' | 'danger' = 'success') {
-    const toast = await this.toastCtrl.create({
-      message,
-      duration: 2500,
-      position: 'top',
-      color,
-    });
-    await toast.present();
-  }
+  await toast.present();
+}
 
   private getPureBase64(dataUrlOrBase64: string): string {
     const marker = 'base64,';
@@ -444,6 +444,7 @@ export class OrdemServicoNovaFotoPage {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    
 
     // Alguns navegadores/webviews (principalmente mobile) são mais confiáveis
     // quando o input está no DOM (mesmo invisível).
@@ -542,19 +543,19 @@ export class OrdemServicoNovaFotoPage {
   const dataUrlCache = this.fotoBase64 || this.foto;
 
   if (!this.osId || this.osId.length !== 36) {
-    this.toast('OS sem identificador (OsId). Salve a OS antes de anexar foto.', 'warning');
+   this.toast('OS sem identificador (OsId). Salve a OS antes de anexar foto.');
     return;
   }
 
   if (!dataUrlUpload || !dataUrlCache) {
-    this.toast('Selecione uma foto antes de confirmar.', 'warning');
+   this.toast('Selecione uma foto antes de confirmar.');
     return;
   }
 
   const base64 = this.getPureBase64(dataUrlUpload);
 
-  // 🔥 1️⃣ Salva foto
- // 🔥 1️⃣ Salva foto
+  // Salva foto
+
 this.ordemService.gravarOrdemServicoFoto(
   this.osId,
   base64,
@@ -575,13 +576,17 @@ this.ordemService.gravarOrdemServicoFoto(
 
     this.appendFotoNoCache(dataUrlCache!, fotoId);
     this.persistirUltimaFotoAnexada(dataUrlCache!, fotoId);
-    this.toast('Foto enviada com sucesso.', 'success');
-    this.navCtrl.back();
+    this.toast('Foto anexada com sucesso');
+    this.router.navigate(['/tabs/ordem-servico-edicao'], {
+  queryParams: {
+    os: this.osId
+  }
+});
 
   },
 
   error: (err) => {
-    this.toast(this.getErrorMessage(err), 'danger');
+   this.toast(this.getErrorMessage(err));
   }
 
 });

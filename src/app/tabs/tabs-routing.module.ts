@@ -261,14 +261,15 @@ const routes: Routes = [
         data: { noHeader: true },
         canActivate: [RouterTokenValidation],
       },
-
-      { path: '', redirectTo: '/tabs/home-principal', pathMatch: 'full' },
-      { path: '**', redirectTo: '/tabs/home-principal', pathMatch: 'full' },
+//nova abertura do app
+     { path: '', redirectTo: '/tabs/new-home', pathMatch: 'full' },
+{ path: '**', redirectTo: '/tabs/new-home', pathMatch: 'full' },
     ],
   },
 
-  { path: '', redirectTo: '/tabs/home-principal', pathMatch: 'full' },
-  { path: '**', redirectTo: '/tabs/home-principal', pathMatch: 'full' },
+  //{ path: '', redirectTo: '/tabs/new-home', pathMatch: 'full' },
+
+//{ path: '**', redirectTo: '/tabs/new-home', pathMatch: 'full' },
 ];
 
 @NgModule({

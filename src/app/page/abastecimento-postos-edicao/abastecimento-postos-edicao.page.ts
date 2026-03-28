@@ -6,6 +6,13 @@ import { forkJoin, of } from 'rxjs';
 import { CalendarPopoverComponent } from '../../components/calendar-popover/calendar-popover.component';
 import { AbastecimentoService } from '../../services/abastecimento.service';
 
+
+import { NavController } from '@ionic/angular';
+
+
+import { AlertController } from '@ionic/angular';
+
+
 type LookupId = string | number;
 type LookupItem = {
   id: LookupId;
@@ -41,7 +48,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   total: number | null = null;
   hodometro: number | null = null;
   horimetro: number | null = null;
-  retorno: boolean = true;
+  retorno: boolean = false;
   estoque: boolean = false;
   equipamentos: LookupItem[] = [];
   empreendimentos: LookupItem[] = [];
@@ -64,6 +71,8 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private abastecimentoService: AbastecimentoService,
+     private navCtrl: NavController,
+      private alertCtrl: AlertController,
     private toastCtrl: ToastController
   ) {}
 
@@ -77,6 +86,18 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     });
     await toast.present();
   }
+
+  private async mostrarAlerta(message: string) {
+  const alert = await this.alertCtrl.create({
+    header: 'Atenção!',
+    message,
+    buttons: ['OK'],
+    backdropDismiss: true,
+    cssClass: ['custom-alert']
+  });
+
+  await alert.present();
+}
 
   compareLookupId = (a: LookupId | null, b: LookupId | null): boolean => {
     if (a === null || typeof a === 'undefined' || b === null || typeof b === 'undefined') {
@@ -118,12 +139,18 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
 
   ionViewWillEnter() {
     const navState = this.getNavigationState();
-
+/*
     if (navState.mode === 'novo' || (!navState.item && !navState.abastecimentoId)) {
       this.resetForm();
       this.ultimoAbastecimentoIdCarregado = null;
       return;
     }
+      */
+     if (navState.mode === 'novo') {
+  this.resetForm();
+  this.ultimoAbastecimentoIdCarregado = null;
+  return;
+}
 
     this.resetForm();
 
@@ -170,7 +197,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   }
 
   private resetForm() {
-    this.dtRetirada = null;
+   this.dtRetirada = new Date().toISOString();
     this.hodometroData = null;
     this.nCtlPostoData = null;
 
@@ -191,7 +218,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     this.total = null;
     this.hodometro = null;
     this.horimetro = null;
-    this.retorno = true;
+    this.retorno = false;
     this.estoque = false;
     this.centrosDespesas = [];
     this.etapas = [];
@@ -704,9 +731,13 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     });
   }
 
-  onBack() {
-    this.router.navigate(['/tabs/abastecimento-postos-pesquisa']);
-  }
+
+onBack() {
+  this.router.navigate(['/tabs/abastecimento-postos-pesquisa'], {
+    queryParams: { recarregar: true }
+  });
+}
+
 
   async openCalendar(
     event: Event,
@@ -742,16 +773,16 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     }
   }
 
-  confirmar() {
+  async confirmar() {
     if (!this.dtRetirada) {
-      alert('⚠️ Data obrigatória');
+      await this.mostrarAlerta(' Data obrigatória');
       return;
     }
 
     // Formatar data para ISO padrão (ex: 2026-01-26T00:00:00.000Z)
     const d = new Date(this.dtRetirada);
     if (Number.isNaN(d.getTime())) {
-      alert('⚠️ Data inválida');
+      await this.mostrarAlerta(' Data inválida');
       return;
     }
     const dataFormatada = d.toISOString();
@@ -759,35 +790,35 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     // Validação Quantidade / Total
     const qtdNum = this.parseNumber(this.qtdRetirada);
     if (qtdNum === null || qtdNum <= 0) {
-      alert('⚠️ Informe a quantidade (maior que zero).');
+      await this.mostrarAlerta(' Informe a quantidade (maior que zero).');
       return;
     }
     const totalNum = this.parseNumber(this.total);
     if (totalNum === null || totalNum <= 0) {
-      alert('⚠️ Informe o total (maior que zero).');
+      await this.mostrarAlerta(' Informe o total (maior que zero).');
       return;
     }
 
     // Validação do Centro de Despesa
     if (!this.centrosDespesas || !Array.isArray(this.centrosDespesas)) {
-      alert('Centro de Despesa não carregado');
+      await this.mostrarAlerta('Centro de Despesa não carregado');
       return;
     }
     const centroDespesaSelecionado = this.centrosDespesas.find(cd => this.getCentroDespesaValue(cd) === String(this.centroDespesas ?? ''));
 
     if (!this.centroDespesas || !centroDespesaSelecionado) {
-      alert('Selecione um Centro de Despesa válido antes de confirmar!');
+      await this.mostrarAlerta('Selecione um Centro de Despesa válido antes de confirmar!');
       this.centroDespesas = null;
       return;
     }
 
     if (!this.isCentroDespesaSelecionavel(centroDespesaSelecionado)) {
       const desc = this.getCentroDespesaDescricao(centroDespesaSelecionado);
-      alert(
-        '⚠️ Centro de Despesa inválido para o Insumo.\n' +
-          'Selecione um Centro de Despesa analítico (não agrupador).\n\n' +
-          (desc ? `Selecionado: ${desc}` : '')
-      );
+    await this.mostrarAlerta(
+      ' Centro de Despesa inválido para o Insumo.<br>' +
+      'Selecione um Centro de Despesa analítico (não agrupador).<br><br>' +
+      (desc ? `Selecionado: ${desc}` : '')
+    );
       return;
     }
 
@@ -825,14 +856,40 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     }
     Object.keys(payload).forEach(key => (payload[key] === null || payload[key] === undefined) && delete payload[key]);
 
-    this.abastecimentoService.gravarAbastecimento(payload).subscribe({
-      next: (res) => {
-        this.mostrarToastSucesso('Abastecimento gravado com sucesso');
-        this.router.navigate(['/tabs/abastecimento-postos']);
-      },
-      error: (err) => {
-        alert('Erro ao gravar abastecimento.\n\nNão foi possível concluir a operação.');
-      }
+this.abastecimentoService.gravarAbastecimento(payload).subscribe({
+  next: async (res) => {
+
+    const toast = await this.toastCtrl.create({
+      message: 'Abastecimento gravado com sucesso',
+      duration: 2500,
+      position: 'bottom',
+      cssClass: 'toast-custom'
     });
+
+    await toast.present();
+
+this.router.navigate(['/tabs/abastecimento-postos-pesquisa'], {
+  queryParams: {
+    fornecedorId: this.fornecedor,
+    equipamentoId: this.equipamento,
+    numVoucher: this.numeroControlePosto,
+    dataInicial: this.dtRetirada,
+    dataFinal: this.dtRetirada
+  }
+});
+
+  error: async (err) => {
+    const alert = await this.alertCtrl.create({
+      header: 'Atenção!',
+      message: 'Erro ao gravar abastecimento. Não foi possível concluir a operação.',
+      buttons: ['OK'],
+      backdropDismiss: true,
+      cssClass: ['custom-alert']
+    });
+
+    await alert.present();
+  }
+}
+});
   }
 }

@@ -48,7 +48,11 @@ export class CalendarPopoverComponent implements AfterViewInit {
     if (isSameMonth(newDate, oldDate) && isSameYear(newDate, oldDate)) {
       // Se SIM, significa que o usuário só pode ter clicado em um DIA.
       // Esta é a ação de finalização.
-      this.popoverCtrl.dismiss({ date: newDateISO });
+      const date = parseISO(newDateISO);
+
+const dateFormatada = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+this.popoverCtrl.dismiss({ date: dateFormatada });
     } else {
       // Se NÃO, significa que o usuário usou as setas ou o seletor
       // para navegar para um novo mês/ano.

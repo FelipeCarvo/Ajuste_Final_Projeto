@@ -67,13 +67,19 @@ this.filtrosAtuais = {
       const possuiFiltroInformado = Object.values(this.filtrosAtuais).some(
         (value) => String(value || '').trim() !== ''
       );
-
+/*
       if (!possuiFiltroInformado) {
         this.resultados = [];
         this.carregando = false;
         this.router.navigate(['/tabs/abastecimento-postos'], { replaceUrl: true });
         return;
       }
+*/
+if (!possuiFiltroInformado) {
+  this.resultados = [];
+  this.carregando = false;
+  return; // NÃO redireciona mais
+}
 
       this.buscarAbastecimentos(this.filtrosAtuais);
     });
@@ -214,7 +220,7 @@ this.filtrosAtuais = {
   }
 
   onBack() {
-    this.router.navigate(['/tabs/abastecimento']);
+    this.router.navigate(['/tabs/abastecimento-postos']);
   }
 
   verDetalhes(item?: any) {

@@ -43,7 +43,7 @@ export class AbastecimentoProprioPesquisaPage implements OnInit {
         (value) => String(value || '').trim() !== ''
       );
 
-      if (!possuiFiltroInformado) {
+      if (!possuiFiltroInformado && !params['recarregar']) {
         this.lista = [];
         this.carregando = false;
         this.router.navigate(['/tabs/abastecimento-proprio'], { replaceUrl: true });
@@ -300,7 +300,7 @@ export class AbastecimentoProprioPesquisaPage implements OnInit {
   }
 
   onBack() {
-    this.router.navigate(['/tabs/abastecimento']);
+    this.router.navigate(['/tabs/abastecimento-proprio']);
   }
 
   verDetalhes(item: any) {

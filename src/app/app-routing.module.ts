@@ -43,23 +43,34 @@ const routes: Routes = [
   },
   {
     path: 'abastecimento-proprio-pesquisa',
-    loadChildren: () => import('./page/abastecimento-proprio-pesquisa/abastecimento-proprio-pesquisa.module').then( m => m.AbastecimentoProprioPesquisaPageModule)
+    loadChildren: () => 
+    import('./page/abastecimento-proprio-pesquisa/abastecimento-proprio-pesquisa.module')
+    .then( m => m.AbastecimentoProprioPesquisaPageModule)
   },
   {
     path: 'abastecimento-proprio-edicao',
     loadChildren: () => import('./page/abastecimento-proprio-edicao/abastecimento-proprio-edicao.module').then( m => m.AbastecimentoProprioEdicaoPageModule)
   },
+
+
+  
   {
     path: 'abastecimento-postos',
-    loadChildren: () => import('./page/abastecimento-postos/abastecimento-postos.module').then( m => m.AbastecimentoPostosPageModule)
+    loadChildren: () =>
+      import('./page/abastecimento-postos/abastecimento-postos.module')
+    .then( m => m.AbastecimentoPostosPageModule)
   },
   {
     path: 'abastecimento-postos-pesquisa',
-    loadChildren: () => import('./page/abastecimento-postos-pesquisa/abastecimento-postos-pesquisa.module').then( m => m.AbastecimentoPostosPesquisaPageModule)
+    loadChildren: () => 
+    import('./page/abastecimento-postos-pesquisa/abastecimento-postos-pesquisa.module')
+    .then( m => m.AbastecimentoPostosPesquisaPageModule)
   },
   {
     path: 'abastecimento-postos-edicao',
-    loadChildren: () => import('./page/abastecimento-postos-edicao/abastecimento-postos-edicao.module').then( m => m.AbastecimentoPostosEdicaoPageModule)
+    loadChildren: () => 
+    import('./page/abastecimento-postos-edicao/abastecimento-postos-edicao.module')
+    .then( m => m.AbastecimentoPostosEdicaoPageModule)
   },
 
 

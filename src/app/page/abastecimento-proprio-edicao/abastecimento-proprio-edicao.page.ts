@@ -6,6 +6,9 @@ import { CalendarPopoverComponent } from '../../components/calendar-popover/cale
 import { AbastecimentoService } from '../../services/abastecimento.service';
 import { InsumoService } from '../../services/insumo.service';
 
+
+import { NavController } from '@ionic/angular';
+
 type IonicChangeEvent<T = unknown> = CustomEvent<{ value: T }>;
 
 type EmpreendimentoDto = {
@@ -344,6 +347,7 @@ tiposPrevAbast = [
     private popoverCtrl: PopoverController,
     private abastecimentoService: AbastecimentoService,
     private insumoService: InsumoService,
+      private navCtrl: NavController,
     private toastCtrl: ToastController
   )
   {
@@ -352,16 +356,20 @@ tiposPrevAbast = [
     this.dadosAbastecimento = navigation?.extras?.state?.['abastecimento'];
   }
 
-  private async toast(message: string, color: 'success' | 'warning' | 'danger' = 'success') {
-    const toast = await this.toastCtrl.create({
-      message,
-      duration: 2500,
-      position: 'top',
-      color,
-      icon: color === 'success' ? 'checkmark-circle-outline' : undefined,
-    });
-    await toast.present();
-  }
+private async toast(
+  message: string,
+  color: 'success' | 'warning' | 'danger' = 'success'
+) {
+  const toast = await this.toastCtrl.create({
+    message,
+    duration: 2500,
+    position: 'bottom', 
+    cssClass: 'toast-custom',
+    color: undefined, 
+  });
+
+  await toast.present();
+}
 
 ngOnInit() {
   this.carregarBombas();
@@ -888,8 +896,29 @@ ngOnInit() {
       'aplicacaoCod',
       'AplicacaoCod'
     ]);
-    this.aplicacaoSelecionada = (aplicacaoRaw && aplicacaoRaw !== guidZerado) ? String(aplicacaoRaw) : null;
 
+    //this.aplicacaoSelecionada = (aplicacaoRaw && aplicacaoRaw !== guidZerado) ? String(aplicacaoRaw) : null;
+
+    const aplicacaoId = (aplicacaoRaw && aplicacaoRaw !== guidZerado)
+  ? String(aplicacaoRaw)
+  : null;
+
+this.aplicacaoSelecionada = aplicacaoId;
+
+// 🔥 GARANTE QUE APAREÇA NA TELA MESMO SEM LISTA
+if (aplicacaoId && !this.aplicacoes.find(a => String(a.id) === aplicacaoId)) {
+  this.aplicacoes = [
+    ...this.aplicacoes,
+    {
+      id: aplicacaoId,
+      descricao: this.getItemValue(dados, [
+        'aplicacaoDescr',
+        'aplicacaoDesc',
+        'descricaoAplicacao'
+      ]) || 'Aplicação carregada'
+    }
+  ];
+}
     const destinoRaw = this.getItemValue(dados, ['destino', 'TpDestino']);
     this.destinoSelecionado = (destinoRaw && destinoRaw !== guidZerado) ? String(destinoRaw) : null;
 
@@ -920,6 +949,17 @@ ngOnInit() {
       'trocaReposicaoDesc'
     ]);
     this.tipoPrevAbast = this.normalizarTipoPrevAbast(tipo);
+//novo
+
+if (!this.tipoPrevAbast) {
+  const tipoBruto = String(tipo ?? '').toUpperCase();
+
+  if (tipoBruto.includes('T')) this.tipoPrevAbast = 'T';
+  if (tipoBruto.includes('R')) this.tipoPrevAbast = 'R';
+}
+    if (!this.tiposPrevAbast.some(t => t.id === this.tipoPrevAbast)) {
+  this.tipoPrevAbast = null;
+}
 
     this.quantidade = this.getItemValue(dados, ['quantidade', 'qtdInsumo', 'QtdInsumo']);
 
@@ -949,8 +989,8 @@ ngOnInit() {
     this.frentistalNome = this.getItemValue(dados, ['frentistalNome']);
     this.frentistaId = (frentistaRaw && frentistaRaw !== guidZerado) ? String(frentistaRaw) : null;
 
-    this.aplicacoes = [];
-    this.aplicacaoHabilitada = false;
+    //this.aplicacoes = [];
+    //this.aplicacaoHabilitada = false;
 
     if (this.abastecimentoId) {
       this.aplicarCacheCampos(String(this.abastecimentoId));
@@ -959,10 +999,18 @@ ngOnInit() {
     if (this.empreendimentoSelecionado) {
       this.onEmpreendimentoChange(this.empreendimentoSelecionado, false);
     }
+/*
+    setTimeout(() => {
+  if (this.equipamentoSelecionado && this.insumoSelecionado) {
+    this.carregarAplicacoes();
+  }
+}, 100);
+*/
+if (this.equipamentoSelecionado && this.insumoSelecionado) {
+  this.carregarAplicacoes();
+}
 
-    if (this.equipamentoSelecionado && this.insumoSelecionado) {
-      this.carregarAplicacoes();
-    }
+
   }
   /**
    * Limpa todos os campos do formulário para criar um novo abastecimento
@@ -1379,8 +1427,11 @@ private carregarEtapas() {
 }
 private carregarAplicacoes() {
 
-  this.aplicacoes = [];
-  this.aplicacaoHabilitada = false;
+  //let aplicacaoAtual = this.aplicacaoSelecionada;
+
+ // this.aplicacoes = [];
+ // this.aplicacaoHabilitada = false;
+ const aplicacaoAtual = this.aplicacaoSelecionada;
 
   if (!this.equipamentoSelecionado || !this.insumoSelecionado) {
     this.aplicacaoSelecionada = null;
@@ -1395,6 +1446,7 @@ private carregarAplicacoes() {
     )
     .subscribe({
       next: (res: any) => {
+
         const lista = this.extrairLista<any>(res);
 
         this.aplicacoes = lista
@@ -1408,12 +1460,38 @@ private carregarAplicacoes() {
           })
           .filter((a: any) => !!a.id && !!String(a.descricao ?? '').trim());
 
-        this.aplicacaoHabilitada = this.aplicacoes.length > 0;
+        //this.aplicacaoHabilitada = this.aplicacoes.length > 0;
+        this.aplicacaoHabilitada = this.aplicacoes.length > 0 || !!aplicacaoAtual;
 
-        if (!this.aplicacaoHabilitada) {
+        // 🔥 GARANTE QUE A APLICAÇÃO VOLTE
+        if (aplicacaoAtual) {
+
+          const existe = this.aplicacoes.find(
+            a => String(a.id) === String(aplicacaoAtual)
+          );
+
+          if (existe) {
+            this.aplicacaoSelecionada = existe.id;
+          } else {
+            console.log('⚠️ Aplicação NÃO encontrada na lista', aplicacaoAtual, this.aplicacoes);
+
+            // adiciona manualmente se não vier da API
+            this.aplicacoes = [
+              ...this.aplicacoes,
+              {
+                id: aplicacaoAtual,
+                descricao: 'Aplicação (carregada)'
+              }
+            ];
+
+            this.aplicacaoSelecionada = aplicacaoAtual;
+          }
+
+        } else {
           this.aplicacaoSelecionada = null;
           this.tipoPrevAbast = null;
         }
+
       },
       error: () => {
         this.aplicacoes = [];
@@ -1423,11 +1501,13 @@ private carregarAplicacoes() {
       }
     });
 }
-
-
-  onBack() {
-    this.router.navigate(['/tabs/abastecimento-proprio-pesquisa']);
-  }
+onBack() {
+  this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
+    queryParams: {
+      recarregar: true
+    }
+  });
+}
 
   async openCalendar(event: Event) {
     event.stopPropagation();
@@ -1643,15 +1723,15 @@ onAplicacaoChange(event: any) {
     this.toast('Insumo obrigatório', 'warning');
     return;
   }
+  if (!this.tipoPrevAbast) {
+  this.toast('Selecione Troca ou Reposição', 'warning');
+  return;
+}
 
   if (this.quantidade == null || this.quantidade <= 0) {
     this.toast('Quantidade inválida', 'warning');
     return;
   }
-
-  // ------------------ DATA FORMATADA ------------------
-
- // ------------------ DATA FORMATADA ------------------
 
 // ------------------ DATA FORMATADA (SEM UTC) ------------------
 
@@ -1730,6 +1810,7 @@ if (!this.blocoSelecionado) {
 */
 // ---------------- PARAMS ----------------
 
+
 const params: Record<string, unknown> = {
   TpAbastecimento: 0,
   DataAbastecimento: dataFormatada,
@@ -1752,12 +1833,20 @@ const params: Record<string, unknown> = {
   Observacao: (this.observacao ?? '').trim() || undefined,
   OperadorSolicitanteId: operadorId ?? undefined,
   FrentistaId: this.colaboradorFrentistaSelecionado ?? undefined,
+
+  // 🔥 AJUSTES IMPORTANTES
   TipoPrevAbast: this.obterTipoPrevAbastPayload(),
-  IdAplicacaoPrev: this.aplicacaoHabilitada ? (this.aplicacaoSelecionada ?? undefined) : undefined,
-  // Se for edição, inclui IdAbastecimento
+
+  aplicacaoId: this.aplicacaoHabilitada 
+    ? (this.aplicacaoSelecionada ?? undefined) 
+    : undefined,
+
+  // ✅ NOVO CAMPO (ESSENCIAL)
+  IdAplicacao: this.aplicacaoSelecionada ?? undefined,
+
+  // Se for edição
   ...(this.abastecimentoId ? { IdAbastecimento: this.abastecimentoId } : {})
 };
-
 
   // ------------------ REGRA DESTINO ------------------
 
@@ -1789,15 +1878,16 @@ const params: Record<string, unknown> = {
       }
 
       this.toast(
-        'Abastecimento gravado! ID: ' +
-        (typeof res === 'string' ? res.substring(0, 8) : 'OK'),
+        'Abastecimento gravado com sucesso',
         'success'
       );
+this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
+  queryParams: {
+    recarregar: true
+  }
+});
+          },
 
-      setTimeout(() => {
-        this.router.navigate(['/tabs/abastecimento-proprio-pesquisa']);
-      }, 1500);
-    },
     error: () => {
       this.carregando = false;
       this.toast(

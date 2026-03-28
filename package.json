@@ -47,6 +47,7 @@
     "capacitor-resources": "^2.0.5",
     "cordova-plugin-file-opener2": "4.0.0",
     "date-fns": "3.6.0",
+    "font-awesome": "^4.7.0",
     "jsqr": "^1.4.0",
     "rxjs": "7",
     "sharp": "^0.30.2",

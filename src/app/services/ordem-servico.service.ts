@@ -262,15 +262,23 @@ export class OrdemServicoService {
 
     const descricao = asNullableString(dados['Descricao']);
 
+    const status = dados['Status'];
+
     const payload: QueryParams = {
       OsId: asNullableString(dados['OsId'] ?? dados['IdOs']),
       Descricao: descricao ? descricao.toUpperCase() : null,
       EquipamentoId: asNullableString(dados['EquipamentoId']),
-      Status: Number(dados['Status'] ?? 1),
-      StatusId: Number(dados['Status'] ?? 1),
-      statusCod: Number(dados['Status'] ?? 1),
-      OsDataAbertura: asNullableString(dados['OsDataAbertura'] ?? dados['DataAbertura']),
-      OsDataConclusao: asNullableString(dados['OsDataConclusao'] ?? dados['DataFechamento']),
+
+      
+    
+
+Status: status !== undefined && status !== null ? Number(status) : null,
+StatusId: status !== undefined && status !== null ? Number(status) : null,
+statusCod: status !== undefined && status !== null ? Number(status) : null,
+
+     OsDataAbertura: asNullableString(dados['OsDataAbertura'] ?? dados['DataAbertura']),
+     OsDataConclusao: asNullableString(dados['OsDataConclusao'] ?? dados['DataFechamento']),
+     
       TipoServicoId: asNullableString(dados['TipoServicoId'] ?? dados['TipoOs']),
       ClassificacaoId: asNullableString(dados['ClassificacaoId'] ?? dados['Classificacao']),
       CausasId: asNullableString(dados['CausasId'] ?? dados['CausaIntervencao']),
