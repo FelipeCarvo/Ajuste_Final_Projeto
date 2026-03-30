@@ -364,9 +364,9 @@ private async toast(
   const toast = await this.toastCtrl.create({
     message,
     duration: 2500,
-    position: 'bottom', 
+    position: 'bottom',
     cssClass: 'toast-custom',
-    color: undefined, 
+    color: undefined,
   });
 
   await toast.present();
@@ -1877,8 +1877,8 @@ const params: Record<string, unknown> = {
   FrentistaId: this.colaboradorFrentistaSelecionado ?? undefined,
   TipoPrevAbast: this.obterTipoPrevAbastPayload(),
 
-  aplicacaoId: this.aplicacaoHabilitada 
-    ? (this.aplicacaoSelecionada ?? undefined) 
+  aplicacaoId: this.aplicacaoHabilitada
+    ? (this.aplicacaoSelecionada ?? undefined)
     : undefined,
   IdAplicacao: this.aplicacaoSelecionada ?? undefined,
 
