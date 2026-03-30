@@ -1765,8 +1765,14 @@ onAplicacaoChange(event: any) {
     this.toast('Insumo obrigatório', 'warning');
     return;
   }
-  if (!this.tipoPrevAbast) {
+
+  if (this.aplicacaoHabilitada && !this.tipoPrevAbast) {
     this.toast('Selecione Troca ou Reposição', 'warning');
+    return;
+  }
+
+  if (this.aplicacaoHabilitada && !this.aplicacaoSelecionada) {
+    this.toast('Informe local da aplicação do insumo', 'warning');
     return;
   }
 
@@ -1876,11 +1882,9 @@ const params: Record<string, unknown> = {
   OperadorSolicitanteId: operadorId ?? undefined,
   FrentistaId: this.colaboradorFrentistaSelecionado ?? undefined,
   TipoPrevAbast: this.obterTipoPrevAbastPayload(),
-
-  aplicacaoId: this.aplicacaoHabilitada
+  AplicacaoPrevId: this.aplicacaoHabilitada
     ? (this.aplicacaoSelecionada ?? undefined)
     : undefined,
-  IdAplicacao: this.aplicacaoSelecionada ?? undefined,
 
   // Se for edição
   ...(this.abastecimentoId ? { IdAbastecimento: this.abastecimentoId } : {})
