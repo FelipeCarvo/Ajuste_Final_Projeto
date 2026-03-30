@@ -99,6 +99,33 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   await alert.present();
 }
 
+  private getErrorMessage(err: unknown): string {
+    if (typeof err === 'string' && err.trim()) {
+      return err.trim();
+    }
+
+    if (!err || typeof err !== 'object') {
+      return 'Erro ao gravar abastecimento. Não foi possível concluir a operação.';
+    }
+
+    const errorObj = err as Record<string, unknown>;
+    const message = errorObj['message'];
+    if (typeof message === 'string' && message.trim()) {
+      return message.trim();
+    }
+
+    const nestedError = errorObj['error'];
+    if (nestedError && typeof nestedError === 'object') {
+      const nestedRecord = nestedError as Record<string, unknown>;
+      const nestedMessage = nestedRecord['Mensagem'] ?? nestedRecord['mensagem'];
+      if (typeof nestedMessage === 'string' && nestedMessage.trim()) {
+        return nestedMessage.trim();
+      }
+    }
+
+    return 'Erro ao gravar abastecimento. Não foi possível concluir a operação.';
+  }
+
   compareLookupId = (a: LookupId | null, b: LookupId | null): boolean => {
     if (a === null || typeof a === 'undefined' || b === null || typeof b === 'undefined') {
       return a === b;
@@ -856,40 +883,38 @@ onBack() {
     }
     Object.keys(payload).forEach(key => (payload[key] === null || payload[key] === undefined) && delete payload[key]);
 
-this.abastecimentoService.gravarAbastecimento(payload).subscribe({
-  next: async (res) => {
+    this.abastecimentoService.gravarAbastecimento(payload).subscribe({
+      next: async () => {
+        const toast = await this.toastCtrl.create({
+          message: 'Abastecimento gravado com sucesso',
+          duration: 2500,
+          position: 'bottom',
+          cssClass: 'toast-custom'
+        });
 
-    const toast = await this.toastCtrl.create({
-      message: 'Abastecimento gravado com sucesso',
-      duration: 2500,
-      position: 'bottom',
-      cssClass: 'toast-custom'
+        await toast.present();
+
+        this.router.navigate(['/tabs/abastecimento-postos-pesquisa'], {
+          queryParams: {
+            fornecedorId: this.fornecedor,
+            equipamentoId: this.equipamento,
+            numVoucher: this.numeroControlePosto,
+            dataInicial: this.dtRetirada,
+            dataFinal: this.dtRetirada
+          }
+        });
+      },
+      error: async (err) => {
+        const alert = await this.alertCtrl.create({
+          header: 'Atenção!',
+          message: this.getErrorMessage(err),
+          buttons: ['OK'],
+          backdropDismiss: true,
+          cssClass: ['custom-alert']
+        });
+
+        await alert.present();
+      }
     });
-
-    await toast.present();
-
-this.router.navigate(['/tabs/abastecimento-postos-pesquisa'], {
-  queryParams: {
-    fornecedorId: this.fornecedor,
-    equipamentoId: this.equipamento,
-    numVoucher: this.numeroControlePosto,
-    dataInicial: this.dtRetirada,
-    dataFinal: this.dtRetirada
-  }
-});
-
-  error: async (err) => {
-    const alert = await this.alertCtrl.create({
-      header: 'Atenção!',
-      message: 'Erro ao gravar abastecimento. Não foi possível concluir a operação.',
-      buttons: ['OK'],
-      backdropDismiss: true,
-      cssClass: ['custom-alert']
-    });
-
-    await alert.present();
-  }
-}
-});
   }
 }

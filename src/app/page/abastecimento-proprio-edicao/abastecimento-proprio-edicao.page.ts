@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { PopoverController, ToastController } from '@ionic/angular';
+import { AlertController, PopoverController, ToastController } from '@ionic/angular';
 import { format, parseISO } from 'date-fns';
 import { CalendarPopoverComponent } from '../../components/calendar-popover/calendar-popover.component';
 import { AbastecimentoService } from '../../services/abastecimento.service';
@@ -151,8 +151,8 @@ onBombaChange(value: string | null) {
       this.carregarInsumos(bombaId);
 
     },
-    error: () => {
-      this.toast('Erro ao consultar bomba', 'danger');
+    error: (err) => {
+      this.mostrarAlertaErro(this.getErrorMessage(err, 'Erro ao consultar bomba'));
     }
   });
 }
@@ -347,7 +347,8 @@ tiposPrevAbast = [
     private popoverCtrl: PopoverController,
     private abastecimentoService: AbastecimentoService,
     private insumoService: InsumoService,
-      private navCtrl: NavController,
+    private navCtrl: NavController,
+    private alertCtrl: AlertController,
     private toastCtrl: ToastController
   )
   {
@@ -369,6 +370,48 @@ private async toast(
   });
 
   await toast.present();
+}
+
+private async mostrarAlertaErro(message: string) {
+  const alert = await this.alertCtrl.create({
+    header: 'Atenção!',
+    message,
+    buttons: ['OK'],
+    backdropDismiss: true,
+    cssClass: ['custom-alert']
+  });
+
+  await alert.present();
+}
+
+private getErrorMessage(
+  err: unknown,
+  fallback = 'Erro ao processar a operação.'
+): string {
+  if (typeof err === 'string' && err.trim()) {
+    return err.trim();
+  }
+
+  if (!err || typeof err !== 'object') {
+    return fallback;
+  }
+
+  const errorObj = err as Record<string, unknown>;
+  const message = errorObj['message'];
+  if (typeof message === 'string' && message.trim()) {
+    return message.trim();
+  }
+
+  const nestedError = errorObj['error'];
+  if (nestedError && typeof nestedError === 'object') {
+    const nestedRecord = nestedError as Record<string, unknown>;
+    const nestedMessage = nestedRecord['Mensagem'] ?? nestedRecord['mensagem'];
+    if (typeof nestedMessage === 'string' && nestedMessage.trim()) {
+      return nestedMessage.trim();
+    }
+  }
+
+  return fallback;
 }
 
 ngOnInit() {
@@ -557,8 +600,7 @@ ngOnInit() {
     if (
       tipoNormalizado === 'T' ||
       tipoNormalizado.includes('TROCA') ||
-      tipoNumero === 0 ||
-      tipoNumero === 1
+      tipoNumero === 0
     ) {
       return 'T';
     }
@@ -566,6 +608,7 @@ ngOnInit() {
     if (
       tipoNormalizado === 'R' ||
       tipoNormalizado.includes('REPOS') ||
+      tipoNumero === 1 ||
       tipoNumero === 2
     ) {
       return 'R';
@@ -575,7 +618,7 @@ ngOnInit() {
   }
 
   private obterTipoPrevAbastPayload(): number | undefined {
-    if (!this.aplicacaoHabilitada || !this.tipoPrevAbast) {
+    if (!this.tipoPrevAbast) {
       return undefined;
     }
 
@@ -718,6 +761,23 @@ ngOnInit() {
     const cache = this.obterCacheCampos();
     const registro = cache[String(abastecimentoId)];
     if (!registro) return;
+
+    if (!this.tipoPrevAbast && registro.tipoPrevAbast) {
+      this.tipoPrevAbast = this.normalizarTipoPrevAbast(registro.tipoPrevAbast);
+    }
+
+    if (!this.aplicacaoSelecionada && registro.aplicacaoSelecionada) {
+      this.aplicacaoSelecionada = registro.aplicacaoSelecionada;
+      if (!this.aplicacoes.some(a => String(a.id) === String(registro.aplicacaoSelecionada))) {
+        this.aplicacoes = [
+          ...this.aplicacoes,
+          {
+            id: registro.aplicacaoSelecionada,
+            descricao: registro.aplicacaoDescricao || 'Aplicação (cache local)'
+          }
+        ];
+      }
+    }
 
     if (!this.blocoSelecionado && registro.blocoSelecionado) {
       this.blocoSelecionado = registro.blocoSelecionado;
@@ -897,15 +957,12 @@ ngOnInit() {
       'AplicacaoCod'
     ]);
 
-    //this.aplicacaoSelecionada = (aplicacaoRaw && aplicacaoRaw !== guidZerado) ? String(aplicacaoRaw) : null;
-
     const aplicacaoId = (aplicacaoRaw && aplicacaoRaw !== guidZerado)
   ? String(aplicacaoRaw)
   : null;
 
 this.aplicacaoSelecionada = aplicacaoId;
 
-// 🔥 GARANTE QUE APAREÇA NA TELA MESMO SEM LISTA
 if (aplicacaoId && !this.aplicacoes.find(a => String(a.id) === aplicacaoId)) {
   this.aplicacoes = [
     ...this.aplicacoes,
@@ -988,9 +1045,6 @@ if (!this.tipoPrevAbast) {
     this.frentistaCod = this.getItemValue(dados, ['frentistaCod']);
     this.frentistalNome = this.getItemValue(dados, ['frentistalNome']);
     this.frentistaId = (frentistaRaw && frentistaRaw !== guidZerado) ? String(frentistaRaw) : null;
-
-    //this.aplicacoes = [];
-    //this.aplicacaoHabilitada = false;
 
     if (this.abastecimentoId) {
       this.aplicarCacheCampos(String(this.abastecimentoId));
@@ -1427,15 +1481,10 @@ private carregarEtapas() {
 }
 private carregarAplicacoes() {
 
-  //let aplicacaoAtual = this.aplicacaoSelecionada;
-
- // this.aplicacoes = [];
- // this.aplicacaoHabilitada = false;
  const aplicacaoAtual = this.aplicacaoSelecionada;
 
   if (!this.equipamentoSelecionado || !this.insumoSelecionado) {
     this.aplicacaoSelecionada = null;
-    this.tipoPrevAbast = null;
     return;
   }
 
@@ -1460,10 +1509,8 @@ private carregarAplicacoes() {
           })
           .filter((a: any) => !!a.id && !!String(a.descricao ?? '').trim());
 
-        //this.aplicacaoHabilitada = this.aplicacoes.length > 0;
         this.aplicacaoHabilitada = this.aplicacoes.length > 0 || !!aplicacaoAtual;
 
-        // 🔥 GARANTE QUE A APLICAÇÃO VOLTE
         if (aplicacaoAtual) {
 
           const existe = this.aplicacoes.find(
@@ -1473,9 +1520,6 @@ private carregarAplicacoes() {
           if (existe) {
             this.aplicacaoSelecionada = existe.id;
           } else {
-            console.log('⚠️ Aplicação NÃO encontrada na lista', aplicacaoAtual, this.aplicacoes);
-
-            // adiciona manualmente se não vier da API
             this.aplicacoes = [
               ...this.aplicacoes,
               {
@@ -1489,7 +1533,6 @@ private carregarAplicacoes() {
 
         } else {
           this.aplicacaoSelecionada = null;
-          this.tipoPrevAbast = null;
         }
 
       },
@@ -1497,7 +1540,6 @@ private carregarAplicacoes() {
         this.aplicacoes = [];
         this.aplicacaoHabilitada = false;
         this.aplicacaoSelecionada = null;
-        this.tipoPrevAbast = null;
       }
     });
 }
@@ -1724,9 +1766,9 @@ onAplicacaoChange(event: any) {
     return;
   }
   if (!this.tipoPrevAbast) {
-  this.toast('Selecione Troca ou Reposição', 'warning');
-  return;
-}
+    this.toast('Selecione Troca ou Reposição', 'warning');
+    return;
+  }
 
   if (this.quantidade == null || this.quantidade <= 0) {
     this.toast('Quantidade inválida', 'warning');
@@ -1833,15 +1875,11 @@ const params: Record<string, unknown> = {
   Observacao: (this.observacao ?? '').trim() || undefined,
   OperadorSolicitanteId: operadorId ?? undefined,
   FrentistaId: this.colaboradorFrentistaSelecionado ?? undefined,
-
-  // 🔥 AJUSTES IMPORTANTES
   TipoPrevAbast: this.obterTipoPrevAbastPayload(),
 
   aplicacaoId: this.aplicacaoHabilitada 
     ? (this.aplicacaoSelecionada ?? undefined) 
     : undefined,
-
-  // ✅ NOVO CAMPO (ESSENCIAL)
   IdAplicacao: this.aplicacaoSelecionada ?? undefined,
 
   // Se for edição
@@ -1888,11 +1926,10 @@ this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
 });
           },
 
-    error: () => {
+    error: (err) => {
       this.carregando = false;
-      this.toast(
-        'Erro ao salvar abastecimento. Veja o console para detalhes.',
-        'danger'
+      this.mostrarAlertaErro(
+        this.getErrorMessage(err, 'Erro ao salvar abastecimento.')
       );
     },
   });

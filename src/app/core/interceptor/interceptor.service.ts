@@ -12,6 +12,37 @@ import { ToastController } from '@ionic/angular';
 @Injectable()
 export class Interceptor implements HttpInterceptor {
   constructor(private store: Store,private http:HttpClient,private router:Router,private loginService:LoginService,private toastController:ToastController){}
+
+  private extractMessageFromDetail(detail: unknown): string | undefined {
+    if (typeof detail !== 'string') return undefined;
+
+    const lines = detail
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const directMatch = line.match(/^Mensagem:\s*(.+)$/i);
+
+      if (!directMatch) continue;
+
+      const value = directMatch[1].trim();
+      if (!value) continue;
+
+      if (!/^E_\d+/i.test(value)) {
+        return value;
+      }
+
+      const nextLine = lines[index + 1];
+      if (nextLine && !/^At\s+/i.test(nextLine) && !/^Classe:/i.test(nextLine) && !/^Stack:/i.test(nextLine)) {
+        return nextLine.trim();
+      }
+    }
+
+    return undefined;
+  }
+
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     let errorMsg = '';
     const tokenUrl = request.url.includes('/connect/token');
@@ -82,16 +113,18 @@ export class Interceptor implements HttpInterceptor {
             errorMsg = desc;
           }
           else if (error.error instanceof ErrorEvent) {
-            console.log('this is client side error');
             errorMsg = `Error: ${error.error.message}`;
           }
           else {
-            console.log('this is server side error',error);
             const err = errorBody;
+            const detailMessage = this.extractMessageFromDetail(
+              err['MensagemDetalhada'] ?? err['mensagemDetalhada']
+            );
 
             // 1) Padrão do backend atual (Mensagem/MensagemDetalhada)
             let msg = (typeof err['mensagem'] === 'string' ? err['mensagem'] : undefined)
-              ?? (typeof err['Mensagem'] === 'string' ? err['Mensagem'] : undefined);
+              ?? (typeof err['Mensagem'] === 'string' ? err['Mensagem'] : undefined)
+              ?? detailMessage;
 
             // 2) Padrão ASP.NET ApiController (RFC9110) para validação (400)
             // { title, status, errors: { Campo: ["msg"] } }
@@ -125,7 +158,6 @@ export class Interceptor implements HttpInterceptor {
             msg = msg ?? 'erro interno'
             const errorDescription = typeof err['error_description'] === 'string' ? err['error_description'] : '';
             errorMsg = `${errorDescription ? errorDescription : msg}`;
-            console.log(errorMsg)
           }
           return throwError(errorMsg);
         }
