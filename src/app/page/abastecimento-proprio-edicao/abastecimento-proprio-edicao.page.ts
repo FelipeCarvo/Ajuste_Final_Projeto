@@ -625,6 +625,16 @@ ngOnInit() {
     return this.tipoPrevAbast === 'T' ? 0 : 1;
   }
 
+  private obterAplicacaoPrevIdPayload(): string | undefined {
+    const aplicacaoId = String(this.aplicacaoSelecionada ?? '').trim();
+
+    if (!aplicacaoId || aplicacaoId === '00000000-0000-0000-0000-000000000000') {
+      return undefined;
+    }
+
+    return aplicacaoId;
+  }
+
   private resolverMotoristaOperadorSelecionado(dados: any): string | null {
     if (!this.motoristasOperadores?.length) {
       return null;
@@ -1859,6 +1869,9 @@ if (!this.blocoSelecionado) {
 // ---------------- PARAMS ----------------
 
 
+const tipoPrevAbastPayload = this.obterTipoPrevAbastPayload();
+const aplicacaoPrevIdPayload = this.obterAplicacaoPrevIdPayload();
+
 const params: Record<string, unknown> = {
   TpAbastecimento: 0,
   DataAbastecimento: dataFormatada,
@@ -1881,9 +1894,19 @@ const params: Record<string, unknown> = {
   Observacao: (this.observacao ?? '').trim() || undefined,
   OperadorSolicitanteId: operadorId ?? undefined,
   FrentistaId: this.colaboradorFrentistaSelecionado ?? undefined,
-  TipoPrevAbast: this.obterTipoPrevAbastPayload(),
+  TipoPrevAbast: tipoPrevAbastPayload,
+  tipoPrevAbast: tipoPrevAbastPayload,
   AplicacaoPrevId: this.aplicacaoHabilitada
-    ? (this.aplicacaoSelecionada ?? undefined)
+    ? aplicacaoPrevIdPayload
+    : undefined,
+  IdAplicacaoPrev: this.aplicacaoHabilitada
+    ? aplicacaoPrevIdPayload
+    : undefined,
+  AplicacaoId: this.aplicacaoHabilitada
+    ? aplicacaoPrevIdPayload
+    : undefined,
+  aplicacaoId: this.aplicacaoHabilitada
+    ? aplicacaoPrevIdPayload
     : undefined,
 
   // Se for edição
