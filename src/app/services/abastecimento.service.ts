@@ -420,12 +420,33 @@ listarColaboradoresFrentista() {
     }
 
     // Monta a query string manualmente
+    const guidZerado = '00000000-0000-0000-0000-000000000000';
     const params = new URLSearchParams();
+    const keysNormalizadasAdicionadas = new Set<string>();
+
     Object.keys(payload).forEach(key => {
-      const value = payload[key];
-      if (value !== null && typeof value !== 'undefined') {
-        params.append(key, String(value));
+      const normalizedKey = key.trim().toLowerCase();
+      if (!normalizedKey || keysNormalizadasAdicionadas.has(normalizedKey)) {
+        return;
       }
+
+      const value = payload[key];
+      if (value === null || typeof value === 'undefined') {
+        return;
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed === guidZerado) {
+          return;
+        }
+        params.append(key, trimmed);
+        keysNormalizadasAdicionadas.add(normalizedKey);
+        return;
+      }
+
+      params.append(key, String(value));
+      keysNormalizadasAdicionadas.add(normalizedKey);
     });
     const url = `/api/frotas/Abastecimentos/GravaAbastecimento?${params.toString()}`;
     // Envia como POST sem corpo, só com query string

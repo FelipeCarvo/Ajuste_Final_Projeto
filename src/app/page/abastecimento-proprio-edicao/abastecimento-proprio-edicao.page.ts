@@ -89,6 +89,7 @@ type BlocoDto = {
 })
 export class AbastecimentoProprioEdicaoPage implements OnInit {
   private readonly cacheCamposKey = 'abastecimento_proprio_campos_cache_v1';
+  private readonly maxIntPayloadValue = Number.MAX_SAFE_INTEGER;
 
   // Novos campos para exibição completa
   public fornecedorRazao: string | null = null;
@@ -109,6 +110,7 @@ export class AbastecimentoProprioEdicaoPage implements OnInit {
 //  FUNÇÕES DE MUDANÇA DE CAMPOS (COM AUTOCOMPLETE)
 // =====================================================
 
+
 // =======================
 // BOMBA
 // =======================
@@ -121,6 +123,8 @@ onBombaChange(value: string | null) {
   // Limpa dependentes
   this.bicoSelecionado = null;
   this.bicos = [];
+  this.numBombaInicial = null;
+  this.numBombaFinal = null;
 
   this.destinoSelecionado = null;
   this.destinos = [];
@@ -168,6 +172,7 @@ selecionarBomba(item: any) {
 
 onBicoChange(value: string | null) {
   this.bicoSelecionado = value ? String(value) : null;
+  this.numBombaInicial = null;
 
   this.carregarUltimoNumeroBico(); // chama automaticamente
 }
@@ -412,6 +417,46 @@ private getErrorMessage(
   }
 
   return fallback;
+}
+
+private extrairIdRespostaSalvar(res: unknown): string | null {
+  if (typeof res === 'string' || typeof res === 'number') {
+    const texto = String(res).trim();
+    return texto ? texto : null;
+  }
+
+  if (Array.isArray(res)) {
+    for (const item of res) {
+      const idLista = this.extrairIdRespostaSalvar(item);
+      if (idLista) return idLista;
+    }
+    return null;
+  }
+
+  if (res && typeof res === 'object') {
+    const obj = res as Record<string, unknown>;
+    const idDireto = this.getItemValue(obj, [
+      'abastecimentoId',
+      'IdAbastecimento',
+      'idAbastecimento',
+      'AbastecimentoId',
+      'id',
+      'Id'
+    ]);
+
+    if (idDireto !== null && typeof idDireto !== 'undefined' && typeof idDireto !== 'object') {
+      const texto = String(idDireto).trim();
+      if (texto) return texto;
+    }
+
+    const candidatosAninhados = [obj['data'], obj['result'], obj['resultado'], obj['value']];
+    for (const candidato of candidatosAninhados) {
+      const idAninhado = this.extrairIdRespostaSalvar(candidato);
+      if (idAninhado) return idAninhado;
+    }
+  }
+
+  return null;
 }
 
 ngOnInit() {
@@ -1321,22 +1366,88 @@ private carregarInsumos(bombaId: string) {
 }
 
 private carregarUltimoNumeroBico() {
+  this.numBombaInicial = null;
 
   if (!this.bombaSelecionada || !this.bicoSelecionado) {
     return;
   }
+
+  const extrairNumeracao = (retorno: any): number | null => {
+    if (typeof retorno === 'string') {
+      const texto = retorno.trim();
+      if (!texto) return null;
+
+      try {
+        return extrairNumeracao(JSON.parse(texto));
+      } catch {
+        const numeroTexto = Number(texto.replace(',', '.'));
+        return Number.isSafeInteger(numeroTexto) && numeroTexto >= 0
+          ? numeroTexto
+          : null;
+      }
+    }
+
+    const candidatos = Array.isArray(retorno)
+      ? retorno
+      : [
+          retorno,
+          retorno?.data,
+          retorno?.result,
+          retorno?.resultado,
+          retorno?.value,
+          retorno?.items,
+        ].filter((item) => item !== null && typeof item !== 'undefined');
+
+    for (const item of candidatos) {
+      if (Array.isArray(item)) {
+        const numeroLista = extrairNumeracao(item);
+        if (numeroLista !== null) return numeroLista;
+        continue;
+      }
+
+      const valorBruto = item?.numeracao ??
+        item?.Numeracao ??
+        item?.ctrNumeracao ??
+        item?.CtrNumeracao ??
+        item?.bombaNumeracao ??
+        item?.BombaNumeracao ??
+        item?.numero ??
+        item?.Numero ??
+        item;
+
+      const numero = typeof valorBruto === 'number'
+        ? valorBruto
+        : Number(String(valorBruto ?? '').trim().replace(',', '.'));
+
+      if (Number.isSafeInteger(numero) && numero >= 0 && numero <= this.maxIntPayloadValue) {
+        return numero;
+      }
+    }
+
+    return null;
+  };
 
   this.abastecimentoService
     .consultarUltimoNumeroBico(
       this.bombaSelecionada,
       this.bicoSelecionado
     )
-.subscribe({
-  next: (retorno: any) => {
-    this.numBombaInicial = retorno?.[0]?.numeracao ?? 0;
-  },
-  error: () => {}
-});
+    .subscribe({
+      next: (retorno: any) => {
+        const numeracao = extrairNumeracao(retorno);
+
+        if (numeracao === null) {
+          this.numBombaInicial = null;
+          this.toast('Não foi possível preencher automaticamente o No.Bomba Inicial. Informe o valor manualmente.', 'warning');
+          return;
+        }
+
+        this.numBombaInicial = numeracao;
+      },
+      error: () => {
+        this.numBombaInicial = null;
+      }
+    });
 }
 
 onEmpreendimentoChange(value: string | null, resetDependentes: boolean = true) {
@@ -1705,7 +1816,30 @@ private getTipoControleEquipamentoSelecionado(): string {
     .toUpperCase();
 }
 
+private normalizarInteiroPayload(label: string, value: unknown): number | undefined | null {
+  if (value === null || typeof value === 'undefined' || value === '') {
+    return undefined;
+  }
 
+  const numero = typeof value === 'number'
+    ? value
+    : Number(String(value).trim().replace(',', '.'));
+
+  if (
+    !Number.isFinite(numero) ||
+    !Number.isInteger(numero) ||
+    numero < 0 ||
+    numero > this.maxIntPayloadValue
+  ) {
+    this.toast(
+      `${label} inválido. Informe um número inteiro entre 0 e ${this.maxIntPayloadValue}.`,
+      'warning'
+    );
+    return null;
+  }
+
+  return numero;
+}
 
 onQuantidadeChange(event: Event) {
   const value = (event.target as HTMLInputElement).value;
@@ -1790,6 +1924,30 @@ onAplicacaoChange(event: any) {
     this.toast('Quantidade inválida', 'warning');
     return;
   }
+
+  const quantidadePayload = Number(this.quantidade);
+  if (!Number.isFinite(quantidadePayload) || quantidadePayload > this.maxIntPayloadValue) {
+    this.toast(`Quantidade inválida. Informe um valor até ${this.maxIntPayloadValue}.`, 'warning');
+    return;
+  }
+
+  const odometroPayload = this.normalizarInteiroPayload('Odômetro Abastecimento', this.odometro);
+  if (odometroPayload === null) return;
+
+  const odometroAtualPayload = this.normalizarInteiroPayload('Odômetro Atual', this.odometroAtual);
+  if (odometroAtualPayload === null) return;
+
+  const horimetroPayload = this.normalizarInteiroPayload('Horímetro', this.horimetro);
+  if (horimetroPayload === null) return;
+
+  const horimetroAtualPayload = this.normalizarInteiroPayload('Horímetro Atual', this.horimetroAtual);
+  if (horimetroAtualPayload === null) return;
+
+  const numBicoInicialPayload = this.normalizarInteiroPayload('No.Bomba Inicial', this.numBombaInicial);
+  if (numBicoInicialPayload === null) return;
+
+  const numBicoFinalPayload = this.normalizarInteiroPayload('No.Bomba Final', this.numBombaFinal);
+  if (numBicoFinalPayload === null) return;
 
 // ------------------ DATA FORMATADA (SEM UTC) ------------------
 
@@ -1879,23 +2037,22 @@ const params: Record<string, unknown> = {
   IdTanqueOrigem: this.bombaSelecionada,
   IdBico: this.bicoSelecionado,
   IdInsumo: this.insumoSelecionado,
-  QtdInsumo: Number(this.quantidade),
+  QtdInsumo: quantidadePayload,
   Origem: 3,
   IdEmprd: idEmprdFinal,
   IdEtapa: this.etapaSelecionada ?? undefined,
   IdBloco: idBlocoFinal,
-  Odometro: this.odometro ?? undefined,
-  OdometroAtual: this.odometroAtual ?? undefined,
-  Horimetro: this.horimetro ?? undefined,
-  HorimetroAtual: this.horimetroAtual ?? undefined,
+  Odometro: odometroPayload,
+  OdometroAtual: odometroAtualPayload,
+  Horimetro: horimetroPayload,
+  HorimetroAtual: horimetroAtualPayload,
   horaAbastecimento: this.horaAbastecimento ?? undefined,
-  NumBicoInicial: this.numBombaInicial ?? undefined,
-  NumBicoFinal: this.numBombaFinal ?? undefined,
+  NumBicoInicial: numBicoInicialPayload,
+  NumBicoFinal: numBicoFinalPayload,
   Observacao: (this.observacao ?? '').trim() || undefined,
   OperadorSolicitanteId: operadorId ?? undefined,
   FrentistaId: this.colaboradorFrentistaSelecionado ?? undefined,
   TipoPrevAbast: tipoPrevAbastPayload,
-  tipoPrevAbast: tipoPrevAbastPayload,
   AplicacaoPrevId: this.aplicacaoHabilitada
     ? aplicacaoPrevIdPayload
     : undefined,
@@ -1903,9 +2060,6 @@ const params: Record<string, unknown> = {
     ? aplicacaoPrevIdPayload
     : undefined,
   AplicacaoId: this.aplicacaoHabilitada
-    ? aplicacaoPrevIdPayload
-    : undefined,
-  aplicacaoId: this.aplicacaoHabilitada
     ? aplicacaoPrevIdPayload
     : undefined,
 
@@ -1920,13 +2074,33 @@ const params: Record<string, unknown> = {
     params.IdEquipamento = this.equipamentoSelecionado;
   } else {
     // Tanque / Comboio / etc
-    params.IdTanqueDestino = destinoObj.destinoId;
+    params.IdTanqueDestino =
+      destinoObj.destinoId ??
+      (destinoObj as any).destinoid ??
+      this.destinoSelecionado ??
+      undefined;
   }
 
-  // Remove undefined
-  Object.keys(params).forEach(
-    key => params[key] === undefined && delete params[key]
-  );
+  // Remove valores vazios/inválidos antes de enviar
+  Object.keys(params).forEach((key) => {
+    const value = params[key];
+
+    if (value === undefined || value === null) {
+      delete params[key];
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+
+      if (!trimmed || trimmed === guidZerado) {
+        delete params[key];
+        return;
+      }
+
+      params[key] = trimmed;
+    }
+  });
 
   // ------------------ ENVIO ------------------
 
@@ -1937,7 +2111,8 @@ const params: Record<string, unknown> = {
     next: (res) => {
       this.carregando = false;
 
-      const idParaCache = this.abastecimentoId || (typeof res === 'string' ? String(res) : null);
+      const idRetornado = this.extrairIdRespostaSalvar(res);
+      const idParaCache = this.abastecimentoId || idRetornado;
       if (idParaCache) {
         this.salvarCacheCampos(idParaCache);
       }
@@ -1946,10 +2121,29 @@ const params: Record<string, unknown> = {
         'Abastecimento gravado com sucesso',
         'success'
       );
+
+      /*
 this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
   queryParams: {
     recarregar: true
   }
+});
+
+*/
+
+const idGerado = this.abastecimentoId || idRetornado || '';
+
+this.router.navigate(['/tabs/abastecimento-proprio-pesquisa'], {
+  queryParams: {
+    idAbastecimento: idGerado || null,
+    highlight: idGerado || null,
+    somenteRecente: '1',
+    origemTanqueId: this.bombaSelecionada || null,
+    equipamentoId: this.equipamentoSelecionado || null,
+    dataInicial: this.data || null,
+    dataFinal: this.data || null,
+  },
+  replaceUrl: true
 });
           },
 

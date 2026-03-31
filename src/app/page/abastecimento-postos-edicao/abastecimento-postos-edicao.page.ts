@@ -61,6 +61,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
 
 
   private ultimoAbastecimentoIdCarregado: string | null = null;
+  private readonly cacheFlagsKey = 'abastecimento_posto_flags_cache_v1';
 
   ionViewWillLeave() {
     this.ultimoAbastecimentoIdCarregado = null;
@@ -126,6 +127,90 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     return 'Erro ao gravar abastecimento. Não foi possível concluir a operação.';
   }
 
+  private extrairIdRespostaSalvar(res: unknown): string | null {
+    if (typeof res === 'string' || typeof res === 'number') {
+      const texto = String(res).trim();
+      return texto ? texto : null;
+    }
+
+    if (Array.isArray(res)) {
+      for (const item of res) {
+        const idLista = this.extrairIdRespostaSalvar(item);
+        if (idLista) return idLista;
+      }
+      return null;
+    }
+
+    if (res && typeof res === 'object') {
+      const idDireto = this.getItemValue(res, [
+        'abastecimentoId',
+        'IdAbastecimento',
+        'idAbastecimento',
+        'AbastecimentoId',
+        'id',
+        'Id'
+      ]);
+
+      if (idDireto !== null && typeof idDireto !== 'undefined' && typeof idDireto !== 'object') {
+        const texto = String(idDireto).trim();
+        if (texto) return texto;
+      }
+
+      const obj = res as Record<string, unknown>;
+      for (const candidato of [obj['data'], obj['result'], obj['resultado'], obj['value']]) {
+        const idAninhado = this.extrairIdRespostaSalvar(candidato);
+        if (idAninhado) return idAninhado;
+      }
+    }
+
+    return null;
+  }
+
+  private obterCacheFlags(): Record<string, { retorno?: boolean; estoque?: boolean; atualizadoEm: string }> {
+    try {
+      const bruto = localStorage.getItem(this.cacheFlagsKey);
+      if (!bruto) return {};
+      const parsed = JSON.parse(bruto);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private salvarCacheFlags(abastecimentoId: string): void {
+    if (!abastecimentoId) return;
+
+    const cache = this.obterCacheFlags();
+    cache[String(abastecimentoId)] = {
+      retorno: !!this.retorno,
+      estoque: !!this.estoque,
+      atualizadoEm: new Date().toISOString()
+    };
+
+    localStorage.setItem(this.cacheFlagsKey, JSON.stringify(cache));
+  }
+
+  private aplicarCacheFlags(
+    abastecimentoId: string,
+    campos?: { retorno?: unknown; estoque?: unknown }
+  ): void {
+    if (!abastecimentoId) return;
+
+    const cache = this.obterCacheFlags()[String(abastecimentoId)];
+    if (!cache) return;
+
+    const retornoInformado = this.parseBooleanFlag(campos?.retorno);
+    const estoqueInformado = this.parseBooleanFlag(campos?.estoque);
+
+    if (retornoInformado === null && typeof cache.retorno === 'boolean') {
+      this.retorno = cache.retorno;
+    }
+
+    if (estoqueInformado === null && typeof cache.estoque === 'boolean') {
+      this.estoque = cache.estoque;
+    }
+  }
+
   compareLookupId = (a: LookupId | null, b: LookupId | null): boolean => {
     if (a === null || typeof a === 'undefined' || b === null || typeof b === 'undefined') {
       return a === b;
@@ -181,6 +266,17 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
 
     this.resetForm();
 
+    if (navState.item) {
+      this.preencherFormulario(navState.item, { onlyIfEmpty: true });
+    }
+
+    if (navState.abastecimentoId) {
+      this.aplicarCacheFlags(navState.abastecimentoId, {
+        retorno: this.getItemValue(navState.item, ['Retorno', 'retorno', 'indRetorno', 'flRetorno', 'isRetorno', 'retornoPosto', 'numRetornoPosto']),
+        estoque: this.getItemValue(navState.item, ['Estoque', 'estoque', 'indEstoque', 'flEstoque', 'isEstoque'])
+      });
+    }
+
     this.resolverEmpresaPendente();
     this.resolverEmpreendimentoPendenteECarregarDependencias();
     if (this.isGuid(this.empreendimento)) {
@@ -207,6 +303,10 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
             return;
           }
           this.preencherFormulario(detalhe);
+          this.aplicarCacheFlags(navState.abastecimentoId, {
+            retorno: this.getItemValue(detalhe, ['Retorno', 'retorno', 'indRetorno', 'flRetorno', 'isRetorno', 'retornoPosto', 'numRetornoPosto']),
+            estoque: this.getItemValue(detalhe, ['Estoque', 'estoque', 'indEstoque', 'flEstoque', 'isEstoque'])
+          });
           this.resolverEmpresaPendente();
           this.resolverEmpreendimentoPendenteECarregarDependencias();
           if (this.isGuid(this.empreendimento)) {
@@ -224,7 +324,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   }
 
   private resetForm() {
-   this.dtRetirada = new Date().toISOString();
+    this.dtRetirada = null;
     this.hodometroData = null;
     this.nCtlPostoData = null;
 
@@ -535,13 +635,30 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     const voucher = this.getItemValue(item, ['NumeroControlePosto', 'numeroControlePosto', 'numVoucher', 'voucher']);
     if (shouldSet(this.numeroControlePosto)) this.numeroControlePosto = typeof voucher === 'string' || typeof voucher === 'number' ? String(voucher) : '';
 
-    const retorno = this.getItemValue(item, ['Retorno', 'retorno', 'numRetornoPosto']);
+    const retorno = this.getItemValue(item, [
+      'Retorno',
+      'retorno',
+      'indRetorno',
+      'flRetorno',
+      'isRetorno',
+      'ehRetorno',
+      'retornoPosto',
+      'retornoAbastecimento',
+      'numRetornoPosto'
+    ]);
     const retornoFlag = this.parseBooleanFlag(retorno);
     if (retornoFlag !== null) {
       this.retorno = retornoFlag;
     }
 
-    const estoque = this.getItemValue(item, ['Estoque', 'estoque']);
+    const estoque = this.getItemValue(item, [
+      'Estoque',
+      'estoque',
+      'indEstoque',
+      'flEstoque',
+      'isEstoque',
+      'ehEstoque'
+    ]);
     const estoqueFlag = this.parseBooleanFlag(estoque);
     if (estoqueFlag !== null) {
       this.estoque = estoqueFlag;
@@ -884,7 +1001,13 @@ onBack() {
     Object.keys(payload).forEach(key => (payload[key] === null || payload[key] === undefined) && delete payload[key]);
 
     this.abastecimentoService.gravarAbastecimento(payload).subscribe({
-      next: async () => {
+      next: async (res) => {
+        const idSalvo = this.ultimoAbastecimentoIdCarregado || this.extrairIdRespostaSalvar(res);
+        if (idSalvo) {
+          this.ultimoAbastecimentoIdCarregado = idSalvo;
+          this.salvarCacheFlags(idSalvo);
+        }
+
         const toast = await this.toastCtrl.create({
           message: 'Abastecimento gravado com sucesso',
           duration: 2500,
@@ -896,6 +1019,9 @@ onBack() {
 
         this.router.navigate(['/tabs/abastecimento-postos-pesquisa'], {
           queryParams: {
+            idAbastecimento: idSalvo || null,
+            highlight: idSalvo || null,
+            somenteRecente: '1',
             fornecedorId: this.fornecedor,
             equipamentoId: this.equipamento,
             numVoucher: this.numeroControlePosto,
