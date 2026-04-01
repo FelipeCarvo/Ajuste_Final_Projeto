@@ -5,6 +5,11 @@ import { CommonModule } from '@angular/common';
 const routes: Routes = [
   {
     path: '',
+    redirectTo: 'tabs/new-home',
+    pathMatch: 'full'
+  },
+  {
+    path: 'tabs',
     loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
   },
   {

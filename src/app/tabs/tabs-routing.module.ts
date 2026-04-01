@@ -5,7 +5,7 @@ import { RouterTokenValidation } from './auth/validationToken';
 
 const routes: Routes = [
   {
-    path: 'tabs',
+    path: '',
     component: TabsPage,
     children: [
       {
@@ -262,12 +262,10 @@ const routes: Routes = [
         canActivate: [RouterTokenValidation],
       },
 //nova abertura do app
-     { path: '', redirectTo: '/tabs/new-home', pathMatch: 'full' },
-{ path: '**', redirectTo: '/tabs/new-home', pathMatch: 'full' },
+     { path: '', redirectTo: 'new-home', pathMatch: 'full' },
+     { path: '**', redirectTo: 'new-home', pathMatch: 'full' },
     ],
   },
-
-  //{ path: '', redirectTo: '/tabs/new-home', pathMatch: 'full' },
 
 //{ path: '**', redirectTo: '/tabs/new-home', pathMatch: 'full' },
 ];

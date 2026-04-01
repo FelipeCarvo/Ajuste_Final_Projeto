@@ -191,7 +191,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
   }
 
   private aplicarCacheFlags(
-    abastecimentoId: string,
+    abastecimentoId: string | null,
     campos?: { retorno?: unknown; estoque?: unknown }
   ): void {
     if (!abastecimentoId) return;
@@ -475,6 +475,32 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     return undefined;
   }
 
+  private parseDateOnly(value: unknown): string | null {
+    if (value === null || typeof value === 'undefined') return null;
+    const valueStr = String(value).trim();
+    if (!valueStr) return null;
+
+    try {
+      const parsed = parseISO(valueStr);
+      if (Number.isNaN(parsed.getTime())) return null;
+
+
+
+      //const year = parsed.getUTCFullYear();
+      //const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+      //const day = String(parsed.getUTCDate()).padStart(2, '0');
+     
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getDate()).padStart(2, '0');
+      
+      
+      return `${year}-${month}-${day}`;
+    } catch {
+      return null;
+    }
+  }
+
   private preencherFormulario(item: unknown, options?: { onlyIfEmpty?: boolean }) {
     const onlyIfEmpty = options?.onlyIfEmpty === true;
     const shouldSet = (current: unknown): boolean => {
@@ -618,7 +644,8 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
     if (shouldSet(this.observacao) && typeof obs === 'string') this.observacao = obs;
 
     const data = this.getItemValue(item, ['dataAbastecimento', 'DataAbastecimento', 'data']);
-    if (shouldSet(this.dtRetirada) && typeof data === 'string') this.dtRetirada = data;
+    const dataSomente = this.parseDateOnly(data);
+    if (shouldSet(this.dtRetirada) && dataSomente) this.dtRetirada = dataSomente;
 
     const qtd = this.getItemValue(item, ['quantidade', 'QtdInsumo']);
     if (shouldSet(this.qtdRetirada)) this.qtdRetirada = typeof qtd === 'number' ? qtd : (typeof qtd === 'string' ? Number(qtd) : null);
@@ -910,8 +937,15 @@ onBack() {
 
   formatDate(isoString: string | null): string {
     if (!isoString) return '';
+    const dateOnly = this.parseDateOnly(isoString);
+    if (!dateOnly) return '';
+
     try {
-      return format(parseISO(isoString), 'dd/MM/yyyy');
+      //const utcDate = new Date(`${dateOnly}T00:00:00.000Z`);
+      //return format(utcDate, 'dd/MM/yyyy');
+
+     const localDate = new Date(dateOnly + 'T00:00:00');
+    return format(localDate, 'dd/MM/yyyy');
     } catch {
       return '';
     }
@@ -923,13 +957,21 @@ onBack() {
       return;
     }
 
-    // Formatar data para ISO padrão (ex: 2026-01-26T00:00:00.000Z)
-    const d = new Date(this.dtRetirada);
-    if (Number.isNaN(d.getTime())) {
+    // Formatar data em horário local (sem UTC)
+    const dataSomente = this.parseDateOnly(this.dtRetirada);
+    if (!dataSomente) {
       await this.mostrarAlerta(' Data inválida');
       return;
     }
-    const dataFormatada = d.toISOString();
+    //const dataFormatada = `${dataSomente}T00:00:00.000Z`;
+
+    const dataFormatada = `${dataSomente}T00:00:00`;
+
+
+    // 🔍 LOG PARA DEBUG
+console.log('dtRetirada:', this.dtRetirada);
+console.log('dataSomente:', dataSomente);
+console.log('dataFormatada:', dataFormatada);
 
     // Validação Quantidade / Total
     const qtdNum = this.parseNumber(this.qtdRetirada);
