@@ -466,8 +466,7 @@ ngOnInit() {
   this.carregarEquipamentos();
 
   if (!this.abastecimentoId) {
-    const hoje = new Date();
-    this.data = hoje.toISOString().split('T')[0];
+    this.data = this.getHojeLocalIso();
   }
 }
 
@@ -613,12 +612,15 @@ ngOnInit() {
 
       this.abastecimentoId = null;
 
-      const hoje = new Date();
-      this.data = hoje.toISOString().split('T')[0];
+      this.data = this.getHojeLocalIso();
     }
 
   });
 }
+
+  private getHojeLocalIso(): string {
+    return format(new Date(), 'yyyy-MM-dd');
+  }
 
   ngOnDestroy() {
     if (this.paramMapSubscription) {
@@ -860,13 +862,19 @@ ngOnInit() {
       }
     }
 
-    // Restaurar horimetroAtual e odometroAtual se não vieram do backend
-    if (this.horimetroAtual == null && registro.horimetroAtual != null) {
-      this.horimetroAtual = registro.horimetroAtual;
+    // Backend pode devolver valor padrão nesses campos; prioriza o último valor salvo localmente.
+    if (registro.horimetroAtual != null) {
+      const horimetroAtualCache = Number(registro.horimetroAtual);
+      if (Number.isFinite(horimetroAtualCache)) {
+        this.horimetroAtual = horimetroAtualCache;
+      }
     }
 
-    if (this.odometroAtual == null && registro.odometroAtual != null) {
-      this.odometroAtual = registro.odometroAtual;
+    if (registro.odometroAtual != null) {
+      const odometroAtualCache = Number(registro.odometroAtual);
+      if (Number.isFinite(odometroAtualCache)) {
+        this.odometroAtual = odometroAtualCache;
+      }
     }
   }
 
@@ -1665,7 +1673,7 @@ private carregarAplicacoes() {
     });
 }
 onBack() {
-  this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
+  this.navCtrl.navigateRoot('/tabs/abastecimento-proprio', {
     queryParams: {
       recarregar: true
     }
@@ -1869,6 +1877,10 @@ onAplicacaoChange(event: any) {
 }
   confirmar() {
 
+  if (this.carregando) {
+    return;
+  }
+
   const isEdicao = !!this.abastecimentoId;
 
   if (isEdicao && !this.abastecimentoId) {
@@ -1917,6 +1929,11 @@ onAplicacaoChange(event: any) {
 
   if (this.aplicacaoHabilitada && !this.aplicacaoSelecionada) {
     this.toast('Informe local da aplicação do insumo', 'warning');
+    return;
+  }
+
+  if (this.aplicacaoHabilitada && !this.blocoSelecionado) {
+    this.toast('Bloco obrigatório para aplicação do insumo', 'warning');
     return;
   }
 
@@ -2104,23 +2121,24 @@ const params: Record<string, unknown> = {
 
   // ------------------ ENVIO ------------------
 
-  this.carregando = true;
+  const enviarGravacao = (tentativa: number) => {
+    this.carregando = true;
 
-  this.abastecimentoService.gravarAbastecimento(params)
-  .subscribe({
-    next: (res) => {
-      this.carregando = false;
+    this.abastecimentoService.gravarAbastecimento(params)
+    .subscribe({
+      next: (res) => {
+        this.carregando = false;
 
-      const idRetornado = this.extrairIdRespostaSalvar(res);
-      const idParaCache = this.abastecimentoId || idRetornado;
-      if (idParaCache) {
-        this.salvarCacheCampos(idParaCache);
-      }
+        const idRetornado = this.extrairIdRespostaSalvar(res);
+        const idParaCache = this.abastecimentoId || idRetornado;
+        if (idParaCache) {
+          this.salvarCacheCampos(idParaCache);
+        }
 
-      this.toast(
-        'Abastecimento gravado com sucesso',
-        'success'
-      );
+        this.toast(
+          'Abastecimento gravado com sucesso',
+          'success'
+        );
 
       /*
 this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
@@ -2131,28 +2149,42 @@ this.navCtrl.navigateRoot('/tabs/abastecimento-proprio-pesquisa', {
 
 */
 
-const idGerado = this.abastecimentoId || idRetornado || '';
+        const idGerado = this.abastecimentoId || idRetornado || '';
 
-this.router.navigate(['/tabs/abastecimento-proprio-pesquisa'], {
-  queryParams: {
-    idAbastecimento: idGerado || null,
-    highlight: idGerado || null,
-    somenteRecente: '1',
-    origemTanqueId: this.bombaSelecionada || null,
-    equipamentoId: this.equipamentoSelecionado || null,
-    dataInicial: this.data || null,
-    dataFinal: this.data || null,
-  },
-  replaceUrl: true
-});
+        this.router.navigate(['/tabs/abastecimento-proprio-pesquisa'], {
+          queryParams: {
+            idAbastecimento: idGerado || null,
+            highlight: idGerado || null,
+            somenteRecente: '1',
+            origemTanqueId: this.bombaSelecionada || null,
+            equipamentoId: this.equipamentoSelecionado || null,
+            dataInicial: this.data || null,
+            dataFinal: this.data || null,
           },
+          replaceUrl: true
+        });
+      },
 
-    error: (err) => {
-      this.carregando = false;
-      this.mostrarAlertaErro(
-        this.getErrorMessage(err, 'Erro ao salvar abastecimento.')
-      );
-    },
-  });
+      error: (err) => {
+        this.carregando = false;
+
+        const mensagemErro = this.getErrorMessage(err, 'Erro ao salvar abastecimento.');
+        const erroSqlIntermitente =
+          mensagemErro.toLowerCase().includes('dynamic sql error') ||
+          mensagemErro.toLowerCase().includes('unexpected end of command') ||
+          mensagemErro.toLowerCase().includes('sql error code = -104');
+
+        if (erroSqlIntermitente && tentativa < 2) {
+          this.toast('Oscilacao no servidor ao salvar. Tentando novamente...', 'warning');
+          enviarGravacao(tentativa + 1);
+          return;
+        }
+
+        this.mostrarAlertaErro(mensagemErro);
+      },
+    });
+  };
+
+  enviarGravacao(1);
 }
 }

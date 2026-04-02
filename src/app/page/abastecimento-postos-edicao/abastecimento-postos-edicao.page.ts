@@ -904,7 +904,7 @@ export class AbastecimentoPostosEdicaoPage implements OnInit {
 
 
 onBack() {
-  this.router.navigate(['/tabs/abastecimento-postos-pesquisa'], {
+  this.router.navigate(['/tabs/abastecimento-postos'], {
     queryParams: { recarregar: true }
   });
 }

@@ -349,7 +349,7 @@ campoDescricao="descricao"
 
       <!-- Botão confirmar -->
       <div class="abp-actions">
-        <button type="button" class="abp-primary-btn" (click)="confirmar()">
+        <button type="button" class="abp-primary-btn" [disabled]="carregando" (click)="confirmar()">
           CONFIRMAR
         </button>
       </div>
