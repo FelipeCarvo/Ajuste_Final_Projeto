@@ -24,6 +24,25 @@ npm install @capacitor/cli
 * no android: `ionic capacitor run android`
 * no ios: `ionic capacitor run ios`
 
+## :apple: Handoff iOS (para outra pessoa testar no Mac)
+
+Fluxo recomendado no macOS com Xcode instalado:
+
+```sh
+nvm use
+npm ci
+npm run ios:ready
+npm run ios:add
+npm run ios:sync
+npm run ios:open
+```
+
+Opcional para preparar build web + sync geral antes do passo de iOS:
+
+```sh
+npm run ios:test:prep
+```
+
 ## :rocket: Build
 
 ### - IOS

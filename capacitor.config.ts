@@ -14,15 +14,13 @@ const config: CapacitorConfig = {
       spinnerColor: '#383D43',
       launchAutoHide: false,
       backgroundColor: '#000000'
-    },
-    EdgeToEdge: {
-      backgroundColor: '#000000'
+    }
   },
-},
   server: {
     androidScheme: 'http',
     hostname: 'localhost',
-    iosScheme: 'https'
+    iosScheme: 'http',
+    allowNavigation: ['demo.poliview.com.br']
   }
 };
 

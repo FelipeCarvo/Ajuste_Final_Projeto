@@ -7,6 +7,11 @@
     "Gcp": "cd src/App/components && ng generate component",
     "start": "ng serve --proxy-config ./proxy.config.json",
     "build": "ng build",
+    "ios:ready": "node scripts/ios-ready-check.js",
+    "ios:add": "npx cap add ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:test:prep": "npm run ios:ready && npm run build && npx cap sync",
     "generate_apk:ios": "npm run build && ionic cap sync ios && npm run resources:ios && ionic cap open ios",
     "generate_apk:android": "npm run build && ionic cap sync android && npm run resources:android && cd android && ./gradlew assembleDebug",
     "only_apk": "cd android && ./gradlew assembleDebug",
@@ -16,6 +21,9 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "private": true,
   "dependencies": {
